@@ -2,8 +2,8 @@ import fs from "fs";
 import path from "path";
 
 export interface CharacterData {
-  unicode: string; // The character, e.g. '𗀀'
-  unicode_string: string; // The derived 'U+XXXX' string
+  unicode: string; // The character, e.g. "𗀀"
+  unicode_string: string; // The derived "U+XXXX" string
   ids_sequence: string;
   xhzd_index?: number;
   variant?: string;
@@ -13,6 +13,12 @@ export interface CharacterData {
   initial_class?: string;
   pronunciation_warning?: boolean;
   english_definition?: string;
+
+  // New fields for relationships
+  variants?: CharacterData[];
+  synonyms?: CharacterData[];
+  similar_ids_radical?: CharacterData[];
+  similar_ids_rest?: CharacterData[];
 }
 
 // Cache for the parsed TSV data
@@ -69,6 +75,134 @@ async function parseTsvAndCache(): Promise<Map<string, CharacterData>> {
     };
 
     data.set(unicode_string, charData);
+  }
+
+  // --- Second pass: Calculate relationships ---
+  const allCharactersArray = Array.from(data.values());
+
+  // Grouping for efficiency
+  const variantsByCanonical = new Map<string, CharacterData[]>(); // Key: canonical character (string)
+  const synonymsByDefinition = new Map<string, CharacterData[]>(); // Key: english_definition (string)
+  const idsRadicalGroups = new Map<string, CharacterData[]>(); // Key: first 2 IDS chars
+  const idsRestGroups = new Map<string, CharacterData[]>(); // Key: rest of IDS chars
+
+  for (const charData of allCharactersArray) {
+    // Variants Grouping
+    if (charData.variant) {
+      const canonicalChar = charData.variant;
+      if (!variantsByCanonical.has(canonicalChar)) {
+        variantsByCanonical.set(canonicalChar, []);
+      }
+      variantsByCanonical.get(canonicalChar)!.push(charData);
+    }
+
+    // Synonyms Grouping
+    if (charData.english_definition) {
+      const definition = charData.english_definition;
+      if (!synonymsByDefinition.has(definition)) {
+        synonymsByDefinition.set(definition, []);
+      }
+      synonymsByDefinition.get(definition)!.push(charData);
+    }
+
+    // Similar IDS Grouping
+    if (charData.ids_sequence) {
+      const chars = Array.from(charData.ids_sequence);
+      if (chars.length >= 2) {
+        const radical = chars.slice(0, 2).join('');
+        if (!idsRadicalGroups.has(radical)) {
+          idsRadicalGroups.set(radical, []);
+        }
+        idsRadicalGroups.get(radical)!.push(charData);
+
+        const rest = chars.slice(2).join('');
+        if (rest) {
+          if (!idsRestGroups.has(rest)) {
+            idsRestGroups.set(rest, []);
+          }
+          idsRestGroups.get(rest)!.push(charData);
+        }
+      }
+    }
+  }
+
+  // Populate relationship fields for each character
+  for (const charData of allCharactersArray) {
+    // Variants
+    if (charData.variant) {
+      // If this character is a variant of something
+      const canonicalChar = charData.variant;
+      const cluster = variantsByCanonical.get(canonicalChar) || [];
+      // Also include the canonical character itself if it exists and is not this character
+      const canonicalCharData = data.get(getUnicodeString(canonicalChar)); // Lookup by unicode_string
+      const allVariantsInCluster = new Set<CharacterData>();
+      if (canonicalCharData) {
+        allVariantsInCluster.add(canonicalCharData);
+      }
+      cluster.forEach((v) => allVariantsInCluster.add(v));
+
+      // Filter out itself
+      charData.variants = Array.from(allVariantsInCluster).filter(
+        (v) => v.unicode_string !== charData.unicode_string
+      );
+    } else {
+      // If this character is canonical (has no variant field)
+      const cluster = variantsByCanonical.get(charData.unicode) || []; // Check if other chars are variants of this one
+      charData.variants = cluster.filter(
+        (v) => v.unicode_string !== charData.unicode_string
+      );
+    }
+    // Ensure variants are sorted for consistent display
+    if (charData.variants) {
+      charData.variants.sort((a, b) =>
+        a.unicode_string.localeCompare(b.unicode_string)
+      );
+    }
+
+    // Synonyms
+    if (charData.english_definition) {
+      const definition = charData.english_definition;
+      const synonyms = synonymsByDefinition.get(definition) || [];
+      charData.synonyms = synonyms.filter(
+        (s) => s.unicode_string !== charData.unicode_string
+      );
+      // Ensure synonyms are sorted
+      if (charData.synonyms) {
+        charData.synonyms.sort((a, b) =>
+          a.unicode_string.localeCompare(b.unicode_string)
+        );
+      }
+    }
+
+    // Similar IDS
+    if (charData.ids_sequence) {
+      const chars = Array.from(charData.ids_sequence);
+      if (chars.length >= 2) {
+        const radical = chars.slice(0, 2).join('');
+        const similarRadical = idsRadicalGroups.get(radical) || [];
+        charData.similar_ids_radical = similarRadical.filter(
+          (s) => s.unicode_string !== charData.unicode_string
+        );
+        if (charData.similar_ids_radical) {
+          charData.similar_ids_radical.sort((a, b) =>
+            a.unicode_string.localeCompare(b.unicode_string)
+          );
+        }
+
+        const rest = chars.slice(2).join('');
+        if (rest) {
+          const similarRest = idsRestGroups.get(rest) || [];
+          charData.similar_ids_rest = similarRest.filter(
+            (s) => s.unicode_string !== charData.unicode_string
+          );
+          if (charData.similar_ids_rest) {
+            charData.similar_ids_rest.sort((a, b) =>
+              a.unicode_string.localeCompare(b.unicode_string)
+            );
+          }
+        }
+      }
+    }
   }
 
   console.log(`Loaded and cached ${data.size} character records from TSV.`);

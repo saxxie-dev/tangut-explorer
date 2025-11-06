@@ -1,0 +1,25 @@
+---
+import type { CharacterData } from "../utils/database";
+
+interface Props {
+  title: string;
+  characters: CharacterData[] | undefined;
+}
+
+const { title, characters } = Astro.props;
+---
+
+{characters && characters.length > 0 && (
+  <div class="p-6 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800">
+    <h2 class="font-brutalist text-xl font-bold text-brown-900 dark:text-beige-100 mb-4">
+      {title}
+    </h2>
+    <div class="flex flex-wrap gap-4">
+      {characters.map(char => (
+        <a href={`/character/${char.unicode_string}`} class="font-tangut text-4xl text-brown-900 dark:text-beige-100 hover:underline">
+          {char.unicode}
+        </a>
+      ))}
+    </div>
+  </div>
+)}

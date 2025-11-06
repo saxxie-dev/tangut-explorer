@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
+import RelatedCharacterSection from '../../components/RelatedCharacterSection.astro';
 import { getUnicodeString, isValidTangutCharacter } from '../../utils/tangut';
 import { getAllCharacterData, type CharacterData } from '../../utils/database.ts';
 
@@ -21,6 +22,15 @@ if (!characterData || !isValidTangutCharacter(unicodeParam || '')) {
 }
 
 const pageTitle = `${characterData.unicode} (${characterData.unicode_string}) - Tangut Explorer`;
+
+let tone = '';
+if (characterData.rhyme_class) {
+  if (characterData.rhyme_class.startsWith('1')) {
+    tone = '¹';
+  } else if (characterData.rhyme_class.startsWith('2')) {
+    tone = '²';
+  }
+}
 ---
 
 <Layout title={pageTitle}>
@@ -43,7 +53,7 @@ const pageTitle = `${characterData.unicode} (${characterData.unicode_string}) - 
           <div class="col-span-1 row-span-1 flex flex-col items-center justify-center p-4 border-b-2 border-brown-900 dark:border-beige-100">
             {characterData.gong_huangcheng_reading ? (
               <div class="font-sans-reading text-4xl text-brown-700 dark:text-beige-300">
-                {characterData.gong_huangcheng_reading}
+                {characterData.gong_huangcheng_reading}{tone}
               </div>
             ) : (
               <div class="font-brutalist text-xl text-brown-700 dark:text-beige-300 opacity-70">
@@ -155,6 +165,13 @@ const pageTitle = `${characterData.unicode} (${characterData.unicode_string}) - 
               </p>
             </div>
           )}
+
+          <!-- Relationships -->
+          <RelatedCharacterSection title="VARIANTS" characters={characterData.variants} />
+          <RelatedCharacterSection title="SYNONYMS" characters={characterData.synonyms} />
+          <RelatedCharacterSection title="SIMILAR (SAME RADICAL)" characters={characterData.similar_ids_radical} />
+          <RelatedCharacterSection title="SIMILAR (SAME REMAINDER)" characters={characterData.similar_ids_rest} />
+
         </div>
       </div>
     </main>

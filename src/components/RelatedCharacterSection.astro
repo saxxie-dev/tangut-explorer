@@ -7,6 +7,13 @@ interface Props {
 }
 
 const { title, characters } = Astro.props;
+
+function getTone(rhymeClass?: string): string {
+  if (!rhymeClass) return '';
+  if (rhymeClass.startsWith('1')) return '¹';
+  if (rhymeClass.startsWith('2')) return '²';
+  return '';
+}
 ---
 
 {characters && characters.length > 0 && (
@@ -14,12 +21,30 @@ const { title, characters } = Astro.props;
     <h2 class="font-brutalist text-xl font-bold text-brown-900 dark:text-beige-100 mb-4">
       {title}
     </h2>
-    <div class="flex flex-wrap gap-4">
-      {characters.map(char => (
-        <a href={`/character/${char.unicode_string}`} class="font-tangut text-4xl text-brown-900 dark:text-beige-100 hover:underline">
-          {char.unicode}
-        </a>
-      ))}
+    <div class="grid grid-cols-[repeat(auto-fit,9rem)] justify-center gap-1">
+        {characters.map(char => {
+          const tone = getTone(char.rhyme_class);
+          return (
+            <a 
+              href={`/character/${char.unicode_string}`}
+              class="block p-1 border-2 border-transparent hover:border-brown-700 border-beige-200 dark:hover:border-beige-300 dark:border-brown-700 text-center no-underline w-36"
+            >
+              <div class="font-sans-reading text-sm text-brown-700 dark:text-beige-300">
+                {char.gong_huangcheng_reading ? `${char.gong_huangcheng_reading}${tone}` : '-'} 
+              </div>
+              <div class="font-tangut text-3xl text-brown-900 dark:text-beige-100 my-1">
+                {char.unicode}
+              </div>
+              <div 
+                class="font-brutalist text-xs text-brown-800 dark:text-beige-200 truncate"
+                title={char.english_definition || '(No definition data)'}
+              >
+                {char.english_definition || '-'} 
+              </div>
+            </a>
+          );
+        })}
+      </div>
     </div>
   </div>
 )}

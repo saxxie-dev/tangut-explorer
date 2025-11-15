@@ -1,0 +1,48 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import RelatedCharacterSection from '../../components/RelatedCharacterSection.astro';
+import { getAllCharacterData, type CharacterData } from '../../utils/database.ts';
+
+export async function getStaticPaths() {
+  const allCharacters = await getAllCharacterData();
+  const rhymeClasses = new Set<string>();
+
+  allCharacters.forEach(char => {
+    if (char.rhyme_class) {
+      rhymeClasses.add(char.rhyme_class);
+    }
+  });
+
+  return Array.from(rhymeClasses).map(rhymeClass => {
+    const charactersInClass = Array.from(allCharacters.values()).filter(
+      char => char.rhyme_class === rhymeClass
+    );
+    // Sort characters for consistent display
+    charactersInClass.sort((a, b) => a.unicode_string.localeCompare(b.unicode_string));
+
+    return {
+      params: { rhyme_class: rhymeClass },
+      props: { characters: charactersInClass, rhymeClass: rhymeClass }
+    };
+  });
+}
+
+const { characters, rhymeClass } = Astro.props as { characters: CharacterData[], rhymeClass: string };
+
+const pageTitle = `Rhyme Class ${rhymeClass} - Tangut Explorer`;
+---
+
+<Layout title={pageTitle}>
+  <div class="min-h-screen">
+    <Header />
+    
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 class="font-brutalist text-4xl md:text-5xl font-bold text-brown-900 dark:text-beige-100 mb-8 text-center">
+        Characters in Rhyme Class {rhymeClass}
+      </h1>
+      
+      <RelatedCharacterSection title={`Rhyme Class ${rhymeClass}`} characters={characters} />
+    </main>
+  </div>
+</Layout>

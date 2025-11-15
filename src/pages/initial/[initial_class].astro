@@ -1,0 +1,49 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Header from '../../components/Header.astro';
+import RelatedCharacterSection from '../../components/RelatedCharacterSection.astro';
+import { getAllCharacterData } from '../../utils/database.ts';
+import type { CharacterData } from '../../utils/database.ts';
+
+export async function getStaticPaths() {
+  const allCharacters = await getAllCharacterData();
+  const initialClasses = new Set<string>();
+
+  allCharacters.forEach(char => {
+    if (char.initial_class) {
+      initialClasses.add(char.initial_class);
+    }
+  });
+
+  return Array.from(initialClasses).map(initialClass => {
+    const charactersInClass = Array.from(allCharacters.values()).filter(
+      char => char.initial_class === initialClass
+    );
+    // Sort characters for consistent display
+    charactersInClass.sort((a, b) => a.unicode_string.localeCompare(b.unicode_string));
+
+    return {
+      params: { initial_class: initialClass },
+      props: { characters: charactersInClass, initialClass: initialClass }
+    };
+  });
+}
+
+const { characters, initialClass } = Astro.props as { characters: CharacterData[], initialClass: string };
+
+const pageTitle = `Initial Class ${initialClass} - Tangut Explorer`;
+---
+
+<Layout title={pageTitle}>
+  <div class="min-h-screen">
+    <Header />
+    
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 class="font-brutalist text-4xl md:text-5xl font-bold text-brown-900 dark:text-beige-100 mb-8 text-center">
+        Characters in Initial Class {initialClass}
+      </h1>
+      
+      <RelatedCharacterSection title={`Initial Class ${initialClass}`} characters={characters} />
+    </main>
+  </div>
+</Layout>

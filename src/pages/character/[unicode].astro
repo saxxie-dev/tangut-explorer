@@ -129,6 +129,28 @@ if (characterData.rhyme_class) {
                 </div>
               )}
               
+              {characterData.rhyme_class && (
+                <div>
+                  <dt class="font-brutalist text-sm font-bold text-brown-700 dark:text-beige-300 mb-1">RHYME CLASS</dt>
+                  <dd class="font-brutalist text-lg text-brown-900 dark:text-beige-100">
+                    <a href={`/rhyme/${characterData.rhyme_class}`} class="hover:underline">
+                      {characterData.rhyme_class}
+                    </a>
+                  </dd>
+                </div>
+              )}
+
+              {characterData.initial_class && (
+                <div>
+                  <dt class="font-brutalist text-sm font-bold text-brown-700 dark:text-beige-300 mb-1">INITIAL CLASS</dt>
+                  <dd class="font-brutalist text-lg text-brown-900 dark:text-beige-100">
+                    <a href={`/initial/${characterData.initial_class}`} class="hover:underline">
+                      {characterData.initial_class}
+                    </a>
+                  </dd>
+                </div>
+              )}
+              
               {characterData.variant && (
                 <div>
                   <dt class="font-brutalist text-sm font-bold text-brown-700 dark:text-beige-300 mb-1">VARIANT OF</dt>

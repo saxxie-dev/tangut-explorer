@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-export interface CharacterData {
+export type CharacterData = {
   unicode: string; // The character, e.g. "𗀀"
   unicode_string: string; // The derived "U+XXXX" string
   ids_sequence: string;

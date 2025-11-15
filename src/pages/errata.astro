@@ -1,0 +1,40 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Header from '../components/Header.astro';
+import RelatedCharacterSection from '../components/RelatedCharacterSection.astro';
+import { getAllCharacterData, type CharacterData } from '../utils/database.ts';
+
+const allCharacters = await getAllCharacterData();
+  
+const errataCharacters = Array.from(allCharacters.values()).filter(char => {
+    const hasPronunciationWarning = char.pronunciation_warning === true;
+    const hasMissingDefinition = !char.english_definition || char.english_definition.trim() === '';
+    const hasMissingReading = !char.gong_huangcheng_reading || char.gong_huangcheng_reading.trim() === '';
+
+    return hasPronunciationWarning || hasMissingDefinition || hasMissingReading;
+  });
+
+// Sort characters for consistent display
+errataCharacters.sort((a, b) => a.unicode_string.localeCompare(b.unicode_string));
+
+const characters = errataCharacters; // Assign to 'characters' for consistency with other pages
+
+const pageTitle = `Errata - Tangut Explorer`;
+---
+
+<Layout title={pageTitle}>
+  <div class="min-h-screen">
+    <Header />
+    
+    <main class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <h1 class="font-brutalist text-4xl md:text-5xl font-bold text-brown-900 dark:text-beige-100 mb-4 text-center">
+        Errata: Characters with Data Quality Issues
+      </h1>
+      <p class="text-center text-brown-700 dark:text-beige-300 mb-8">
+        This page lists characters where the pronunciation is marked as suspect, or the English definition or Gong-Huangcheng reading is missing.
+      </p>
+      
+      <RelatedCharacterSection title="Problematic Characters" characters={characters} />
+    </main>
+  </div>
+</Layout>

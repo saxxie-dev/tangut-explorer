@@ -63,14 +63,14 @@ if (characterData.rhyme_class) {
             {characterData.pronunciation_warning && (
               <div class="mt-2 text-center">
                 <p class="font-brutalist text-xs text-red-800 dark:text-red-200 font-bold">
-                  (Pronunciation suspect)
+                  (Pronunciation may be incomplete )
                 </p>
               </div>
             )}
           </div>
 
           <!-- Definition (1x1) -->
-          <div class="col-span-1 row-span-1 flex flex-col items-center justify-center p-4">
+          <div class="col-span-1 row-span-2 flex flex-col items-center justify-center p-4">
             {characterData.english_definition ? (
               <div class="font-brutalist text-xl text-brown-900 dark:text-beige-100">
                 {characterData.english_definition}
@@ -80,6 +80,20 @@ if (characterData.rhyme_class) {
                 NO DEFINITION DATA
               </div>
             )}
+            {characterData.variant_warning && (
+              <div class="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900">
+                <p class="font-brutalist text-sm text-yellow-900 dark:text-yellow-100 mb-0">
+                  (Definition )
+                </p>
+              </div>
+            ) }
+          </div>
+
+          <!-- IDS -->
+          <div class="col-span-1 flex items-center justify-center p-2 border-r-2 border-t-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800">
+              <p class="font-tangut text-2xl text-brown-900 dark:text-beige-100 leading-none">
+                {characterData.ids_sequence}
+              </p>
           </div>
         </div>
         
@@ -164,7 +178,7 @@ if (characterData.rhyme_class) {
             </div>
             {characterData.variant_warning && (
                 <div class="mt-4 p-3 bg-yellow-100 dark:bg-yellow-900">
-                  <p class="font-brutalist text-xs text-yellow-800 dark:text-yellow-200 font-bold">
+                  <p class="font-brutalist text-xs text-red-800 dark:text-red-200 font-bold">
                     Note: Variant status is uncertain.
                   </p>
                 </div>
@@ -173,28 +187,17 @@ if (characterData.rhyme_class) {
           
           
           
-          <!-- IDS Structure -->
-          {characterData.ids_sequence && (
-            <div class="p-6 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800">
-              <h2 class="font-brutalist text-xl font-bold text-brown-900 dark:text-beige-100 mb-4">
-                CHARACTER STRUCTURE (IDS)
-              </h2>
-              <p class="font-tangut text-2xl text-brown-900 dark:text-beige-100 mb-2">
-                {characterData.ids_sequence}
-              </p>
-              <p class="font-brutalist text-sm text-brown-700 dark:text-beige-300">
-                Ideographic Description Sequence showing character composition
-              </p>
-            </div>
-          )}
-
           <!-- Relationships -->
           <RelatedCharacterSection title="VARIANTS" characters={characterData.variants} />
           <RelatedCharacterSection title="SYNONYMS" characters={characterData.synonyms} />
-          <RelatedCharacterSection title="SIMILAR (SAME RADICAL)" characters={characterData.similar_ids_radical} />
-          <RelatedCharacterSection title="SIMILAR (SAME REMAINDER)" characters={characterData.similar_ids_rest} />
+          <RelatedCharacterSection title="SIMILAR" characters={characterData.similar_ids_rest} />
+          <RelatedCharacterSection title="SAME RADICAL" characters={characterData.similar_ids_radical} />
 
         </div>
+      </div>
+    </main>
+  </div>
+</Layout>
       </div>
     </main>
   </div>

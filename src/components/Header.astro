@@ -1,5 +1,4 @@
 ---
-// No props needed anymore
 ---
 
 <header class="bg-brown-900 dark:bg-beige-100 border-b-2 border-beige-100 dark:border-brown-900 sticky top-0 z-50">
@@ -7,27 +6,42 @@
     <div class="flex items-center justify-between h-20">
       <!-- Logo/Title -->
       <div class="flex items-center">
-        <a href="/" class="group">
-          <h1 class="font-brutalist text-2xl md:text-3xl font-bold text-beige-100 dark:text-brown-900 tracking-tight">
+        <a href="/" class="group focus-visible:outline-none">
+          <h1 class="font-ui text-2xl md:text-3xl font-bold text-beige-100 dark:text-brown-900 tracking-tight">
             TANGUT EXPLORER
           </h1>
-          <p class="font-brutalist text-xs text-beige-300 dark:text-brown-700 uppercase tracking-widest">
+          <p class="font-ui text-xs text-beige-300 dark:text-brown-700 uppercase tracking-widest">
             Unicode Character Database
           </p>
         </a>
       </div>
       
       <!-- Controls -->
-      <div class="flex items-center">
+      <div class="flex items-center gap-6">
+        <!-- Navigation Links -->
+        <nav aria-label="Main navigation">
+          <ul class="flex items-center gap-4 text-sm">
+            <li>
+              <a href="/errata" class="font-ui text-beige-300 dark:text-brown-700 hover:text-beige-100 dark:hover:text-brown-900 transition-colors">
+                ERRATA
+              </a>
+            </li>
+          </ul>
+        </nav>
+
         <!-- Theme Toggle -->
-        <div class="flex items-center space-x-3">
-          <span class="font-brutalist text-xs text-beige-300 dark:text-brown-700 uppercase tracking-widest">THEME</span>
+        <div class="flex items-center gap-3">
+          <span id="theme-label" class="font-ui text-xs text-beige-300 dark:text-brown-700 uppercase tracking-widest sr-only">Theme</span>
           <button
             id="theme-toggle"
-            class="relative w-12 h-6 bg-beige-100 dark:bg-brown-900 border-2 border-brown-900 dark:border-beige-100 transition-all duration-300 hover:shadow-lg cursor-pointer"
-            aria-label="Toggle theme"
+            type="button"
+            role="switch"
+            aria-checked="false"
+            aria-labelledby="theme-label"
+            class="relative w-12 h-6 bg-beige-100 dark:bg-brown-900 border-2 border-brown-900 dark:border-beige-100 transition-all duration-300 hover:shadow-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beige-100 dark:focus-visible:ring-brown-900 focus-visible:ring-offset-2 focus-visible:ring-offset-brown-900 dark:focus-visible:ring-offset-beige-100"
           >
-            <div class="absolute top-0 left-0 w-5 h-4 bg-brown-900 dark:bg-beige-100 transition-transform duration-300 m-0.5 dark:translate-x-5"></div>
+            <span class="sr-only">Switch to dark theme</span>
+            <div class="absolute top-0 left-0 w-5 h-4 bg-brown-900 dark:bg-beige-100 transition-transform duration-300 m-0.5 dark:translate-x-5" aria-hidden="true"></div>
           </button>
         </div>
       </div>
@@ -38,20 +52,38 @@
 <script>
   function toggleTheme() {
     const html = document.documentElement;
+    const button = document.getElementById('theme-toggle');
     const isDark = html.classList.contains('dark');
     
     if (isDark) {
       html.classList.remove('dark');
       localStorage.setItem('theme', 'light');
+      if (button) {
+        button.setAttribute('aria-checked', 'false');
+        button.querySelector('span')?.setAttribute('text', 'Switch to dark theme');
+      }
     } else {
       html.classList.add('dark');
       localStorage.setItem('theme', 'dark');
+      if (button) {
+        button.setAttribute('aria-checked', 'true');
+      }
     }
+
     // PostHog tracking
     if (typeof posthog !== 'undefined') {
         posthog.capture('theme_toggled', { theme: isDark ? 'light' : 'dark' });
     }
   }
+
+  // Set initial ARIA state
+  document.addEventListener('DOMContentLoaded', () => {
+    const button = document.getElementById('theme-toggle');
+    const isDark = document.documentElement.classList.contains('dark');
+    if (button) {
+      button.setAttribute('aria-checked', String(isDark));
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', () => {
     const themeToggle = document.getElementById('theme-toggle');

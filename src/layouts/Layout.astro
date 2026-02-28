@@ -1,9 +1,10 @@
 ---
 export interface Props {
   title: string;
+  description?: string;
 }
 
-const { title } = Astro.props;
+const { title, description = "Explore Tangut (Western Xia) characters from the Unicode standard" } = Astro.props;
 ---
 
 <!doctype html>
@@ -13,21 +14,80 @@ const { title } = Astro.props;
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="generator" content={Astro.generator} />
+    <meta name="description" content={description} />
     <title>{title}</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Tangut&family=Noto+Sans+Mono:wght@100..900&family=Noto+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Tangut&family=Noto+Sans:ital,wght@0,400;0,600;0,700;1,400&family=Noto+Sans+Mono:wght@400;600&display=swap" rel="stylesheet">
 
     <style is:global>
-      .font-brutalist {
-        /* Prioritize legibility, which can help enable advanced font features */
-        text-rendering: optimizeLegibility;
+      :root {
+        --font-sans: 'Noto Sans', system-ui, sans-serif;
+        --font-mono: 'Noto Sans Mono', monospace;
+      }
 
-        /* Explicitly enable standard and contextual ligatures */
-        font-variant-ligatures: common-ligatures contextual;
-        -webkit-font-feature-settings: "liga" on, "clig" on;
-        font-feature-settings: "liga" on, "clig" on;
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        font-family: var(--font-sans);
+      }
+
+      .font-ui {
+        font-family: var(--font-sans);
+        font-weight: 600;
+      }
+
+      .font-mono-ui {
+        font-family: var(--font-mono);
+      }
+
+      .font-tangut {
+        font-family: 'Noto Serif Tangut', serif;
+        font-weight: 400;
+        font-feature-settings: "aalt" on, "ss01" on, "ss02" on;
+        -webkit-font-feature-settings: "aalt" on, "ss01" on, "ss02" on;
+        text-rendering: optimizeLegibility;
+        -webkit-text-rendering: optimizeLegibility;
+        -moz-text-rendering: optimizeLegibility;
+      }
+
+      /* Improve rendering of combining diacritics (like underdots, macrons) */
+      .font-reading {
+        font-family: var(--font-sans);
+        font-feature-settings: "ccmp" on, "liga" on;
+        -webkit-font-feature-settings: "ccmp" on, "liga" on;
+        text-rendering: optimizeLegibility;
+        -webkit-text-rendering: optimizeLegibility;
+        -moz-text-rendering: optimizeLegibility;
+        -webkit-font-smooth: always;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      /* Focus styles for accessibility */
+      :focus-visible {
+        outline: 3px solid currentColor;
+        outline-offset: 2px;
+      }
+
+      /* Skip link for accessibility */
+      .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: inherit;
+        color: inherit;
+        padding: 8px 16px;
+        z-index: 100;
+        font-weight: 600;
+        text-decoration: none;
+        border: 2px solid currentColor;
+      }
+
+      .skip-link:focus {
+        top: 0;
       }
     </style>
     
@@ -41,7 +101,7 @@ const { title } = Astro.props;
       }
     </script>
   </head>
-  <body class="h-full bg-beige-50 dark:bg-brown-900 transition-colors duration-300">
+  <body class="h-full bg-beige-50 dark:bg-brown-900 transition-colors duration-300">    
     <!-- PostHog Analytics -->
     <script>
       !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.async=!0,p.src=s.api_host+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="capture identify alias people.set people.set_once set_config register register_once unregister opt_out_capturing has_opted_out_capturing opt_in_capturing reset isFeatureEnabled onFeatureFlags getFeatureFlag getFeatureFlagPayload reloadFeatureFlags group updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures getActiveMatchingSurveys getSurveys onSessionId".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);

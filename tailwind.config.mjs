@@ -33,8 +33,17 @@ export default {
       },
       fontFamily: {
         'tangut': ['"Noto Serif Tangut"', 'serif'],
-        'brutalist': ['"Noto Sans Mono"', 'monospace'],
-        'sans-reading': ['"Noto Sans"', 'sans-serif']
+        'ui': ['"Noto Sans"', 'system-ui', 'sans-serif'],
+        'mono': ['"Noto Sans Mono"', 'monospace'],
+        'reading': ['"Noto Sans"', 'sans-serif']
+      },
+      fontSize: {
+        'tangut': ['2.5rem', { lineHeight: '1', letterSpacing: '0' }],
+        'tangut-lg': ['4rem', { lineHeight: '1', letterSpacing: '0' }],
+      },
+      spacing: {
+        '18': '4.5rem',
+        '22': '5.5rem',
       }
     },
   },

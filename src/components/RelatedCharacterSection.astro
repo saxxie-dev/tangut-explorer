@@ -18,28 +18,28 @@ function getTone(rhymeClass?: string): string {
 
 {characters && characters.length > 0 && (
   <div class="p-6 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800">
-    <h2 class="font-brutalist text-xl font-bold text-brown-900 dark:text-beige-100 mb-4">
+    <h2 class="font-ui text-lg font-bold text-brown-900 dark:text-beige-100 mb-4">
       {title}
     </h2>
-    <div class="grid grid-cols-[repeat(auto-fit,9rem)] justify-center gap-1">
+    <div class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] justify-center gap-2">
         {characters.map(char => {
           const tone = getTone(char.rhyme_class);
           return (
             <a 
               href={`/character/${char.unicode_string}`}
-              class="block p-1 border-2 border-transparent hover:border-brown-700 border-beige-200 dark:hover:border-beige-300 dark:border-brown-700 text-center no-underline w-36"
+              class="block p-3 border-2 border-transparent hover:border-brown-700 dark:hover:border-beige-300 bg-beige-50 dark:bg-brown-800 hover:bg-beige-200 dark:hover:bg-brown-700 text-center no-underline rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100"
             >
-              <div class="font-sans-reading text-sm text-brown-700 dark:text-beige-300">
-                {char.gong_huangcheng_reading ? `${char.gong_huangcheng_reading}${tone}` : '-'} 
+              <div class="font-reading text-sm text-brown-600 dark:text-beige-400">
+                {char.gong_huangcheng_reading ? `${char.gong_huangcheng_reading}${tone}` : '—'} 
               </div>
-              <div class="font-tangut text-3xl text-brown-900 dark:text-beige-100 my-1">
+              <div class="font-tangut text-2xl text-brown-900 dark:text-beige-100 my-1">
                 {char.unicode}
               </div>
               <div 
-                class="font-brutalist text-xs text-brown-800 dark:text-beige-200 truncate"
-                title={char.english_definition || '(No definition data)'}
+                class="font-ui text-xs text-brown-700 dark:text-beige-300 truncate"
+                title={char.english_definition || 'No definition data'}
               >
-                {char.english_definition || '-'} 
+                {char.english_definition || '—'} 
               </div>
             </a>
           );

@@ -31,6 +31,12 @@ if (characterData.rhyme_class) {
     tone = '²';
   }
 }
+
+// Combine similar and same radical
+const similarCharacters = [
+  ...(characterData.similar_ids_radical || []),
+  ...(characterData.similar_ids_rest || [])
+];
 ---
 
 <Layout title={pageTitle}>
@@ -188,14 +194,9 @@ if (characterData.rhyme_class) {
           <!-- Relationships -->
           <RelatedCharacterSection title="VARIANTS" characters={characterData.variants} />
           <RelatedCharacterSection title="SYNONYMS" characters={characterData.synonyms} />
-          <RelatedCharacterSection title="SIMILAR" characters={characterData.similar_ids_rest} />
-          <RelatedCharacterSection title="SAME RADICAL" characters={characterData.similar_ids_radical} />
+          <RelatedCharacterSection title="SIMILAR CHARACTERS" characters={similarCharacters} />
 
         </div>
-      </div>
-    </main>
-  </div>
-</Layout>
       </div>
     </main>
   </div>

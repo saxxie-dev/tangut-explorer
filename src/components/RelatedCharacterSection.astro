@@ -4,9 +4,11 @@ import type { CharacterData } from "../utils/database";
 interface Props {
   title: string;
   characters: CharacterData[] | undefined;
+  defaultVisible?: number;
+  collapsible?: boolean;
 }
 
-const { title, characters } = Astro.props;
+const { title, characters, defaultVisible = 12, collapsible = true } = Astro.props;
 
 function getTone(rhymeClass?: string): string {
   if (!rhymeClass) return '';
@@ -14,20 +16,33 @@ function getTone(rhymeClass?: string): string {
   if (rhymeClass.startsWith('2')) return '²';
   return '';
 }
+
+const hasMore = collapsible && characters && characters.length > defaultVisible;
 ---
 
 {characters && characters.length > 0 && (
   <div class="p-6 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800">
-    <h2 class="font-ui text-lg font-bold text-brown-900 dark:text-beige-100 mb-4">
-      {title}
-    </h2>
-    <div class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] justify-center gap-2">
-        {characters.map(char => {
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-ui text-lg font-bold text-brown-900 dark:text-beige-100">
+        {title}
+      </h2>
+      {hasMore && (
+        <span class="font-ui text-xs text-brown-500 dark:text-beige-500">
+          {characters.length} total
+        </span>
+      )}
+    </div>
+    <div class="related-grid grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] justify-center gap-2">
+        {characters.map((char, index) => {
           const tone = getTone(char.rhyme_class);
           return (
             <a 
               href={`/character/${char.unicode_string}`}
-              class="block p-3 border-2 border-transparent hover:border-brown-700 dark:hover:border-beige-300 bg-beige-50 dark:bg-brown-800 hover:bg-beige-200 dark:hover:bg-brown-700 text-center no-underline rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100"
+              class:list={[
+                "block p-3 border-2 border-transparent hover:border-brown-700 dark:hover:border-beige-300 bg-beige-50 dark:bg-brown-800 hover:bg-beige-200 dark:hover:bg-brown-700 text-center no-underline rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100",
+                { hidden: hasMore && index >= defaultVisible }
+              ]}
+              data-index={index}
             >
               <div class="font-reading text-sm text-brown-600 dark:text-beige-400">
                 {char.gong_huangcheng_reading ? `${char.gong_huangcheng_reading}${tone}` : '—'} 
@@ -44,7 +59,52 @@ function getTone(rhymeClass?: string): string {
             </a>
           );
         })}
-      </div>
     </div>
+    {hasMore && (
+      <div class="mt-4 text-center">
+        <button 
+          type="button"
+          class="show-more-btn font-ui text-sm px-4 py-2 border-2 border-brown-900 dark:border-beige-100 bg-beige-50 dark:bg-brown-800 text-brown-900 dark:text-beige-100 hover:bg-brown-900 hover:text-beige-100 dark:hover:bg-beige-100 dark:hover:text-brown-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100"
+          data-expanded="false"
+          data-total={characters.length}
+          data-default={defaultVisible}
+        >
+          Show more ({characters.length - defaultVisible} remaining)
+        </button>
+      </div>
+    )}
   </div>
 )}
+
+<script>
+  document.querySelectorAll('.show-more-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const isExpanded = btn.getAttribute('data-expanded') === 'true';
+      const total = parseInt(btn.getAttribute('data-total') || '0');
+      const defaultVisible = parseInt(btn.getAttribute('data-default') || '12');
+      const grid = btn.closest('div').previousElementSibling as HTMLElement;
+      
+      if (!grid) return;
+      
+      const links = grid.querySelectorAll('a');
+      
+      if (isExpanded) {
+        // Collapse
+        links.forEach((link, index) => {
+          if (index >= defaultVisible) {
+            (link as HTMLElement).style.display = 'none';
+          }
+        });
+        btn.textContent = `Show more (${total - defaultVisible} remaining)`;
+        btn.setAttribute('data-expanded', 'false');
+      } else {
+        // Expand
+        links.forEach((link) => {
+          (link as HTMLElement).style.display = 'block';
+        });
+        btn.textContent = 'Show less';
+        btn.setAttribute('data-expanded', 'true');
+      }
+    });
+  });
+</script>

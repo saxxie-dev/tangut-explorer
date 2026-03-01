@@ -1,4 +1,4 @@
-import { createSignal, createEffect, For, Show, onMount } from 'solid-js';
+import { createSignal, createEffect, For, Show, onMount, onCleanup } from 'solid-js';
 
 interface Character {
   unicode: string;
@@ -28,91 +28,120 @@ const COMMON_DEFINITIONS = [
   'a personal name',
 ];
 
-function FilterDropdown(props: { 
-  label: string; 
-  options: string[]; 
-  selected: string[]; 
-  onToggle: (val: string) => void;
+type DataQualityFilter = '' | 'missing' | 'review' | 'place-name' | 'surname' | 'transliteration';
+
+const DEFINITION_FILTERS: Record<string, string> = {
+  'place-name': 'a place name',
+  'surname': 'a surname',
+  'transliteration': 'a transliteration',
+};
+
+function getTone(rhymeClass?: string): string {
+  if (!rhymeClass) return '';
+  if (rhymeClass.startsWith('1')) return '¹';
+  if (rhymeClass.startsWith('2')) return '²';
+  return '';
+}
+
+function parseUrlParams(): URLSearchParams {
+  if (typeof window === 'undefined') return new URLSearchParams();
+  return new URLSearchParams(window.location.search);
+}
+
+function syncToUrl(params: {
+  q?: string;
+  initial?: string;
+  rhyme?: string;
+  quality?: string;
 }) {
-  const [isOpen, setIsOpen] = createSignal(false);
+  if (typeof window === 'undefined') return;
   
-  return (
-    <div class="relative">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen())}
-        class="flex items-center gap-2 px-3 py-1.5 text-sm font-ui border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800 text-brown-900 dark:text-beige-100 hover:bg-brown-200 dark:hover:bg-brown-700 transition-colors"
-      >
-        <span>{props.label}</span>
-        <span class="text-xs opacity-70">
-          {props.selected.length > 0 ? `(${props.selected.length})` : '▼'}
-        </span>
-      </button>
-      
-      <Show when={isOpen()}>
-        <div 
-          class="absolute z-10 mt-1 max-h-60 overflow-auto p-2 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800"
-          style={{ "min-width": "150px" }}
-        >
-          <For each={props.options}>
-            {(opt) => (
-              <button
-                onClick={() => props.onToggle(opt)}
-                class:list={[
-                  "block w-full text-left px-2 py-1 text-xs font-mono transition-colors",
-                  props.selected.includes(opt)
-                    ? "bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900"
-                    : "text-brown-700 dark:text-beige-300 hover:bg-brown-200 dark:hover:bg-brown-700"
-                ]}
-              >
-                {opt}
-              </button>
-            )}
-          </For>
-        </div>
-      </Show>
-    </div>
-  );
+  const url = new URL(window.location.href);
+  const searchParams = new URLSearchParams();
+  
+  if (params.q) searchParams.set('q', params.q);
+  if (params.initial) searchParams.set('initial', params.initial);
+  if (params.rhyme) searchParams.set('rhyme', params.rhyme);
+  if (params.quality) searchParams.set('quality', params.quality);
+  
+  const newUrl = searchParams.toString() 
+    ? `${url.pathname}?${searchParams.toString()}`
+    : url.pathname;
+  
+  window.history.pushState({}, '', newUrl);
 }
 
 export default function SearchableIndex() {
   const [data, setData] = createSignal<IndexData | null>(null);
   const [loading, setLoading] = createSignal(true);
   
-  // Search and filter state
   const [searchQuery, setSearchQuery] = createSignal('');
-  const [selectedInitials, setSelectedInitials] = createSignal<string[]>([]);
-  const [selectedRhymes, setSelectedRhymes] = createSignal<string[]>([]);
-  const [showErrataOnly, setShowErrataOnly] = createSignal(false);
-  const [selectedCommonDefs, setSelectedCommonDefs] = createSignal<string[]>([]);
+  const [selectedInitial, setSelectedInitial] = createSignal('');
+  const [selectedRhyme, setSelectedRhyme] = createSignal('');
+  const [dataQuality, setDataQuality] = createSignal<DataQualityFilter>('');
   
   const [filteredCount, setFilteredCount] = createSignal(0);
   const [visibleCharacters, setVisibleCharacters] = createSignal<Character[]>([]);
   const [page, setPage] = createSignal(0);
   const PAGE_SIZE = 48;
-
+  
+  const [announcement, setAnnouncement] = createSignal('');
+  let searchInputRef: HTMLInputElement | undefined;
+  let sentinelRef: HTMLDivElement | undefined;
+  let observer: IntersectionObserver | undefined;
+  
   onMount(async () => {
     try {
       const response = await fetch('/api/index.json');
       const json = await response.json();
       setData(json);
+      
+      const params = parseUrlParams();
+      if (params.get('q')) setSearchQuery(params.get('q')!);
+      if (params.get('initial')) setSelectedInitial(params.get('initial')!);
+      if (params.get('rhyme')) setSelectedRhyme(params.get('rhyme')!);
+      if (params.get('quality')) setDataQuality(params.get('quality') as DataQualityFilter);
     } catch (e) {
       console.error('Failed to load index:', e);
     } finally {
       setLoading(false);
+      
+      requestAnimationFrame(() => {
+        if (sentinelRef) {
+          observer = new IntersectionObserver(
+            (entries) => {
+              if (entries[0].isIntersecting && visibleCharacters().length < filteredCount()) {
+                setPage(p => p + 1);
+              }
+            },
+            { rootMargin: '400px' }
+          );
+          observer.observe(sentinelRef);
+        }
+      });
     }
+    
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName) && !(e.target as HTMLElement)?.isContentEditable) {
+        e.preventDefault();
+        searchInputRef?.focus();
+      }
+    };
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    onCleanup(() => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+      observer?.disconnect();
+    });
   });
-
-  // Filter logic
+  
   createEffect(() => {
     const d = data();
     if (!d) return;
     
     const query = searchQuery().toLowerCase().trim();
-    const initials = selectedInitials();
-    const rhymes = selectedRhymes();
-    const errataOnly = showErrataOnly();
-    const commonDefs = selectedCommonDefs();
+    const initial = selectedInitial();
+    const rhyme = selectedRhyme();
+    const quality = dataQuality();
     
     let filtered = d.characters;
     
@@ -125,72 +154,61 @@ export default function SearchableIndex() {
       });
     }
     
-    if (initials.length > 0) {
-      filtered = filtered.filter(c => c.initial_class && initials.includes(c.initial_class));
+    if (initial) {
+      filtered = filtered.filter(c => c.initial_class === initial);
     }
     
-    if (rhymes.length > 0) {
-      filtered = filtered.filter(c => c.rhyme_class && rhymes.includes(c.rhyme_class));
+    if (rhyme) {
+      filtered = filtered.filter(c => c.rhyme_class === rhyme);
     }
     
-    if (errataOnly) {
+    if (quality === 'missing') {
       filtered = filtered.filter(c => 
-        c.pronunciation_warning || 
         !c.english_definition?.trim() || 
         !c.gong_huangcheng_reading?.trim()
       );
-    }
-    
-    if (commonDefs.length > 0) {
+    } else if (quality === 'review') {
       filtered = filtered.filter(c => {
         const def = c.english_definition?.toLowerCase();
-        if (!def) return true;
-        return !commonDefs.includes(def);
+        const isCommonDef = def && COMMON_DEFINITIONS.includes(def);
+        return c.pronunciation_warning || isCommonDef;
       });
+    } else if (DEFINITION_FILTERS[quality]) {
+      const targetDef = DEFINITION_FILTERS[quality];
+      filtered = filtered.filter(c => 
+        c.english_definition?.toLowerCase() === targetDef
+      );
     }
     
+    const prevCount = filteredCount();
     setFilteredCount(filtered.length);
     setVisibleCharacters(filtered.slice(0, (page() + 1) * PAGE_SIZE));
+    
+    if (prevCount !== filtered.length && !loading()) {
+      setAnnouncement(`${filtered.length} characters found`);
+    }
   });
-
-  const loadMore = () => {
-    setPage(p => p + 1);
-  };
-
-  const toggleInitial = (val: string) => {
-    setSelectedInitials(prev => 
-      prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
-    );
-    setPage(0);
-  };
-
-  const toggleRhyme = (val: string) => {
-    setSelectedRhymes(prev => 
-      prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
-    );
-    setPage(0);
-  };
-
-  const toggleCommonDef = (val: string) => {
-    setSelectedCommonDefs(prev => 
-      prev.includes(val) ? prev.filter(v => v !== val) : [...prev, val]
-    );
-    setPage(0);
-  };
-
+  
+  createEffect(() => {
+    syncToUrl({
+      q: searchQuery(),
+      initial: selectedInitial(),
+      rhyme: selectedRhyme(),
+      quality: dataQuality(),
+    });
+  });
+  
   const clearFilters = () => {
     setSearchQuery('');
-    setSelectedInitials([]);
-    setSelectedRhymes([]);
-    setShowErrataOnly(false);
-    setSelectedCommonDefs([]);
+    setSelectedInitial('');
+    setSelectedRhyme('');
+    setDataQuality('');
     setPage(0);
   };
-
+  
   const hasActiveFilters = () => 
-    searchQuery() || selectedInitials().length > 0 || selectedRhymes().length > 0 || 
-    showErrataOnly() || selectedCommonDefs().length > 0;
-
+    searchQuery() || selectedInitial() || selectedRhyme() || dataQuality();
+  
   return (
     <div>
       <Show when={!loading()} fallback={
@@ -198,128 +216,139 @@ export default function SearchableIndex() {
           Loading index...
         </div>
       }>
-        {/* Search Bar */}
+        <div 
+          role="status"
+          aria-live="polite"
+          aria-atomic="true"
+          class="sr-only"
+        >
+          {announcement()}
+        </div>
+        
         <div class="mb-4">
-          <input
-            type="text"
-            placeholder="Search characters, readings, or definitions..."
-            value={searchQuery()}
-            onInput={(e) => { setSearchQuery(e.currentTarget.value); setPage(0); }}
-            class="w-full px-4 py-2 text-base font-ui bg-beige-50 dark:bg-brown-900 border-2 border-brown-900 dark:border-beige-100 text-brown-900 dark:text-beige-100 placeholder-brown-500 dark:placeholder-beige-500 focus:outline-none focus:ring-2 focus:ring-brown-900 dark:focus:ring-beige-100"
-          />
+          <label for="search-input" class="sr-only">Search characters, readings, or definitions</label>
+          <div class="relative">
+            <input
+              ref={searchInputRef}
+              id="search-input"
+              type="text"
+              placeholder="Search characters, readings, or definitions... (press / to focus)"
+              value={searchQuery()}
+              onInput={(e) => { setSearchQuery(e.currentTarget.value); setPage(0); }}
+              class="w-full px-4 py-2.5 text-base font-ui bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100 text-brown-900 dark:text-beige-100 placeholder-brown-500 dark:placeholder-beige-500 focus:outline-none focus:ring-2 focus:ring-brown-900 dark:focus:ring-beige-100 focus:ring-offset-2"
+            />
+            <Show when={searchQuery()}>
+              <button
+                type="button"
+                onClick={() => { setSearchQuery(''); setPage(0); }}
+                class="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-brown-500 dark:text-beige-500 hover:text-brown-900 dark:hover:text-beige-100"
+                aria-label="Clear search"
+              >
+                ✕
+              </button>
+            </Show>
+          </div>
         </div>
 
-        {/* Filters - compact row */}
-        <div class="mb-4 flex flex-wrap gap-2 items-center">
-          {/* Data quality toggle */}
-          <label class="flex items-center gap-2 font-ui text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={showErrataOnly()}
-              onChange={(e) => { setShowErrataOnly(e.currentTarget.checked); setPage(0); }}
-              class="w-4 h-4 accent-brown-900 dark:accent-beige-100"
-            />
-            <span class="text-brown-700 dark:text-beige-300">Errata</span>
-          </label>
-          
-          <span class="text-brown-500 dark:text-beige-500">|</span>
-          
-          {/* Exclude dropdown */}
-          <div class="relative">
-            <button
-              type="button"
-              onClick={() => {
-                const el = document.getElementById('exclude-menu');
-                if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
-              }}
-              class="flex items-center gap-1 px-2 py-1 text-sm font-ui text-brown-700 dark:text-beige-300 hover:text-brown-900 dark:hover:text-beige-100"
+        <div class="mb-4 flex flex-wrap gap-3 items-center">
+          <div class="flex items-center gap-2">
+            <label for="filter-quality" class="text-sm font-ui text-brown-700 dark:text-beige-400">
+              Data:
+            </label>
+            <select
+              id="filter-quality"
+              value={dataQuality()}
+              onChange={(e) => { setDataQuality(e.currentTarget.value as DataQualityFilter); setPage(0); }}
+              class="px-2 py-1.5 text-sm font-ui bg-beige-100 dark:bg-brown-800 border border-brown-400 dark:border-brown-600 text-brown-900 dark:text-beige-100 focus:outline-none focus:ring-2 focus:ring-brown-900 dark:focus:ring-beige-100"
             >
-              Exclude {selectedCommonDefs().length > 0 && `(${selectedCommonDefs().length})`}
-              <span class="text-xs">▼</span>
-            </button>
-            <div 
-              id="exclude-menu"
-              class="hidden absolute z-10 mt-1 left-0 p-2 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800"
-              style={{ "min-width": "180px" }}
-            >
-              <For each={COMMON_DEFINITIONS}>
-                {(def) => (
-                  <label class="flex items-center gap-2 px-2 py-1 cursor-pointer hover:bg-brown-200 dark:hover:bg-brown-700">
-                    <input
-                      type="checkbox"
-                      checked={selectedCommonDefs().includes(def)}
-                      onChange={() => toggleCommonDef(def)}
-                      class="w-3 h-3 accent-brown-900 dark:accent-beige-100"
-                    />
-                    <span class="text-xs font-ui text-brown-700 dark:text-beige-300">{def}</span>
-                  </label>
-                )}
-              </For>
-            </div>
+              <option value="">All</option>
+              <option value="missing">Missing data</option>
+              <option value="review">Needs review</option>
+              <option value="place-name">Place names</option>
+              <option value="surname">Surnames</option>
+              <option value="transliteration">Transliterations</option>
+            </select>
           </div>
 
-          <span class="text-brown-500 dark:text-beige-500">|</span>
+          <div class="flex items-center gap-2">
+            <label for="filter-initial" class="text-sm font-ui text-brown-700 dark:text-beige-400">
+              Initial:
+            </label>
+            <select
+              id="filter-initial"
+              value={selectedInitial()}
+              onChange={(e) => { setSelectedInitial(e.currentTarget.value); setPage(0); }}
+              class="px-2 py-1.5 text-sm font-ui bg-beige-100 dark:bg-brown-800 border border-brown-400 dark:border-brown-600 text-brown-900 dark:text-beige-100 focus:outline-none focus:ring-2 focus:ring-brown-900 dark:focus:ring-beige-100"
+            >
+              <option value="">All</option>
+              <For each={data()?.initialClasses || []}>
+                {(cls) => <option value={cls}>{cls}</option>}
+              </For>
+            </select>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <label for="filter-rhyme" class="text-sm font-ui text-brown-700 dark:text-beige-400">
+              Rhyme:
+            </label>
+            <select
+              id="filter-rhyme"
+              value={selectedRhyme()}
+              onChange={(e) => { setSelectedRhyme(e.currentTarget.value); setPage(0); }}
+              class="px-2 py-1.5 text-sm font-ui bg-beige-100 dark:bg-brown-800 border border-brown-400 dark:border-brown-600 text-brown-900 dark:text-beige-100 focus:outline-none focus:ring-2 focus:ring-brown-900 dark:focus:ring-beige-100"
+            >
+              <option value="">All</option>
+              <For each={data()?.rhymeClasses || []}>
+                {(cls) => <option value={cls}>{cls}</option>}
+              </For>
+            </select>
+          </div>
           
-          {/* Initial class dropdown */}
-          <FilterDropdown 
-            label="Initial"
-            options={data()?.initialClasses || []}
-            selected={selectedInitials()}
-            onToggle={toggleInitial}
-          />
-          
-          {/* Rhyme class dropdown */}
-          <FilterDropdown 
-            label="Rhyme"
-            options={data()?.rhymeClasses || []}
-            selected={selectedRhymes()}
-            onToggle={toggleRhyme}
-          />
-          
-          {/* Clear filters */}
           <Show when={hasActiveFilters()}>
             <button
               onClick={clearFilters}
-              class="ml-auto font-ui text-sm text-brown-600 dark:text-beige-400 hover:text-brown-900 dark:hover:text-beige-100 underline"
+              class="ml-auto font-ui text-sm text-brown-700 dark:text-beige-300 hover:text-brown-900 dark:hover:text-beige-100 underline px-2 py-1"
             >
-              Clear
+              Clear filters
             </button>
           </Show>
         </div>
 
-        {/* Results count */}
-        <div class="mb-3 font-ui text-xs text-brown-500 dark:text-beige-500">
-          {filteredCount()} characters
+        <div class="mb-3 font-ui text-sm text-brown-700 dark:text-beige-300">
+          <span class="font-semibold">{filteredCount()}</span>
+          <span class="ml-1">character{filteredCount() !== 1 ? 's' : ''}</span>
         </div>
 
-        {/* Results grid */}
-        <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-1">
+        <div class="grid grid-cols-[repeat(auto-fill,minmax(8rem,1fr))] gap-2" role="list" aria-label="Tangut characters">
           <For each={visibleCharacters()}>
-            {(char) => (
-              <a
-                href={`/character/${char.unicode_string}`}
-                class="flex flex-col items-center justify-center p-2 aspect-square bg-beige-100 dark:bg-brown-800 border border-brown-900 dark:border-beige-100 hover:bg-brown-900 dark:hover:bg-beige-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100"
-              >
-                <span class="font-tangut text-xl text-brown-900 dark:text-beige-100">{char.unicode}</span>
-                <span class="font-mono text-[10px] text-brown-600 dark:text-beige-400">{char.unicode_string.slice(2)}</span>
-              </a>
-            )}
+            {(char) => {
+              const tone = () => getTone(char.rhyme_class);
+              return (
+                <a 
+                  href={`/character/${char.unicode_string}`}
+                  role="listitem"
+                  class="block p-3 border-2 border-transparent hover:border-brown-700 dark:hover:border-beige-300 bg-beige-50 dark:bg-brown-800 hover:bg-beige-200 dark:hover:bg-brown-700 text-center no-underline rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100"
+                >
+                  <div class="font-reading text-sm text-brown-600 dark:text-beige-400">
+                    {char.gong_huangcheng_reading ? `${char.gong_huangcheng_reading}${tone()}` : '—'} 
+                  </div>
+                  <div class="font-tangut text-2xl text-brown-900 dark:text-beige-100 my-1">
+                    {char.unicode}
+                  </div>
+                  <div 
+                    class="font-ui text-xs text-brown-700 dark:text-beige-300 truncate"
+                    title={char.english_definition || 'No definition data'}
+                  >
+                    {char.english_definition || '—'} 
+                  </div>
+                </a>
+              );
+            }}
           </For>
         </div>
 
-        {/* Load more */}
-        <Show when={visibleCharacters().length < filteredCount()}>
-          <div class="text-center mt-4">
-            <button
-              onClick={loadMore}
-              class="font-ui text-sm px-4 py-2 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800 text-brown-900 dark:text-beige-100 hover:bg-brown-900 hover:text-beige-100 dark:hover:bg-beige-100 dark:hover:text-brown-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100"
-            >
-              Load more ({filteredCount() - visibleCharacters().length} remaining)
-            </button>
-          </div>
-        </Show>
+        <div ref={sentinelRef} class="h-4" aria-hidden="true" />
 
-        {/* No results */}
         <Show when={filteredCount() === 0}>
           <div class="text-center py-8">
             <p class="font-ui text-brown-700 dark:text-beige-300">
@@ -327,7 +356,7 @@ export default function SearchableIndex() {
             </p>
             <button
               onClick={clearFilters}
-              class="mt-2 font-ui text-sm text-brown-600 dark:text-beige-400 hover:text-brown-900 dark:hover:text-beige-100 underline"
+              class="mt-3 font-ui text-sm px-4 py-2 bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 rounded transition-colors"
             >
               Clear filters
             </button>

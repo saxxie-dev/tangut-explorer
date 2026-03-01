@@ -29,55 +29,10 @@ const errataCount = characters.filter(char =>
     <Header />
     
     <main id="main-content" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <!-- Hero Section -->
-      <div class="text-center mb-12">
-        <div class="font-tangut text-[100px] md:text-[140px] text-brown-900 dark:text-beige-100 leading-none mb-4">
-          𗀀
-        </div>
-        <h1 class="font-ui text-4xl md:text-5xl font-bold text-brown-900 dark:text-beige-100 mb-4">
-          Tangut Explorer
-        </h1>
-        <p class="font-ui text-lg text-brown-700 dark:text-beige-300 max-w-xl mx-auto mb-8">
-          Explore characters from the Tangut script (Western Xia), encoded in Unicode blocks Tangut and Tangut Supplement.
-        </p>
-        
-        <!-- Stats -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
-          <div class="bg-beige-100 dark:bg-brown-800 p-4 border-2 border-brown-900 dark:border-beige-100">
-            <div class="font-mono text-3xl font-bold text-brown-900 dark:text-beige-100">{totalCharacters}</div>
-            <div class="font-ui text-xs uppercase tracking-wide text-brown-600 dark:text-beige-400">Characters</div>
-          </div>
-          <div class="bg-beige-100 dark:bg-brown-800 p-4 border-2 border-brown-900 dark:border-beige-100">
-            <div class="font-mono text-3xl font-bold text-brown-900 dark:text-beige-100">{initialClasses.size}</div>
-            <div class="font-ui text-xs uppercase tracking-wide text-brown-600 dark:text-beige-400">Initials</div>
-          </div>
-          <div class="bg-beige-100 dark:bg-brown-800 p-4 border-2 border-brown-900 dark:border-beige-100">
-            <div class="font-mono text-3xl font-bold text-brown-900 dark:text-beige-100">{rhymeClasses.size}</div>
-            <div class="font-ui text-xs uppercase tracking-wide text-brown-600 dark:text-beige-400">Rhymes</div>
-          </div>
-          <div class="bg-beige-100 dark:bg-brown-800 p-4 border-2 border-brown-900 dark:border-beige-100">
-            <div class="font-mono text-3xl font-bold text-brown-900 dark:text-beige-100">{errataCount}</div>
-            <div class="font-ui text-xs uppercase tracking-wide text-brown-600 dark:text-beige-400">Errata</div>
-          </div>
-        </div>
-      </div>
 
       <!-- Searchable Index -->
       <div class="mb-12">
         <SearchableIndex client:load />
-      </div>
-
-      <!-- About Section -->
-      <div class="mt-8 p-6 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100">
-        <h2 class="font-ui text-xl font-bold text-brown-900 dark:text-beige-100 mb-4">About Tangut</h2>
-        <div class="font-ui text-brown-700 dark:text-beige-300 space-y-4 max-w-2xl">
-          <p>
-            The Tangut script was used to write the Tangut language, spoken by the Western Xia dynasty (1038–1227) in northwestern China. Over 6,000 distinct characters have been identified.
-          </p>
-          <p>
-            Tangut characters were added to the Unicode Standard in Version 6.1 (2012) in the Tangut block (U+17000–U+187FF), and later expanded with the Tangut Supplement block (U+18D00–U+18D8F) in Version 9.0 (2016).
-          </p>
-        </div>
       </div>
     </main>
   </div>

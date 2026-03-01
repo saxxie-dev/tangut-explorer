@@ -48,15 +48,12 @@ function parseUrlParams(): URLSearchParams {
   return new URLSearchParams(window.location.search);
 }
 
-function syncToUrl(params: {
+function buildUrl(params: {
   q?: string;
   initial?: string;
   rhyme?: string;
   quality?: string;
-}) {
-  if (typeof window === 'undefined') return;
-  
-  const url = new URL(window.location.href);
+}): string {
   const searchParams = new URLSearchParams();
   
   if (params.q) searchParams.set('q', params.q);
@@ -64,11 +61,8 @@ function syncToUrl(params: {
   if (params.rhyme) searchParams.set('rhyme', params.rhyme);
   if (params.quality) searchParams.set('quality', params.quality);
   
-  const newUrl = searchParams.toString() 
-    ? `${url.pathname}?${searchParams.toString()}`
-    : url.pathname;
-  
-  window.history.pushState({}, '', newUrl);
+  const path = typeof window !== 'undefined' ? window.location.pathname : '/';
+  return searchParams.toString() ? `${path}?${searchParams.toString()}` : path;
 }
 
 export default function SearchableIndex() {
@@ -127,9 +121,22 @@ export default function SearchableIndex() {
         searchInputRef?.focus();
       }
     };
+    
+    const handlePopState = () => {
+      isPopState = true;
+      const params = parseUrlParams();
+      setSearchQuery(params.get('q') || '');
+      setSelectedInitial(params.get('initial') || '');
+      setSelectedRhyme(params.get('rhyme') || '');
+      setDataQuality((params.get('quality') as DataQualityFilter) || '');
+      setPage(0);
+    };
+    
     document.addEventListener('keydown', handleGlobalKeyDown);
+    window.addEventListener('popstate', handlePopState);
     onCleanup(() => {
       document.removeEventListener('keydown', handleGlobalKeyDown);
+      window.removeEventListener('popstate', handlePopState);
       observer?.disconnect();
     });
   });
@@ -189,13 +196,20 @@ export default function SearchableIndex() {
     }
   });
   
+  let isPopState = false;
+  
   createEffect(() => {
-    syncToUrl({
+    if (isPopState) {
+      isPopState = false;
+      return;
+    }
+    const newUrl = buildUrl({
       q: searchQuery(),
       initial: selectedInitial(),
       rhyme: selectedRhyme(),
       quality: dataQuality(),
     });
+    window.history.replaceState({}, '', newUrl);
   });
   
   const clearFilters = () => {

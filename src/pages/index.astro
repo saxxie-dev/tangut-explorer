@@ -1,7 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
-import { getAllCharacterData, type CharacterData } from '../utils/database';
+import SearchableIndex from '../components/SearchableIndex';
+import { getAllCharacterData } from '../utils/database';
 
 const allCharacters = await getAllCharacterData();
 
@@ -21,10 +22,6 @@ const errataCount = characters.filter(char =>
   !char.english_definition?.trim() || 
   !char.gong_huangcheng_reading?.trim()
 ).length;
-
-const sampleCharacters = characters
-  .sort((a, b) => a.unicode_string.localeCompare(b.unicode_string))
-  .slice(0, 24);
 ---
 
 <Layout title="Tangut Explorer - Unicode Character Database">
@@ -33,8 +30,8 @@ const sampleCharacters = characters
     
     <main id="main-content" class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <!-- Hero Section -->
-      <div class="text-center mb-16">
-        <div class="font-tangut text-[120px] md:text-[160px] text-brown-900 dark:text-beige-100 leading-none mb-4">
+      <div class="text-center mb-12">
+        <div class="font-tangut text-[100px] md:text-[140px] text-brown-900 dark:text-beige-100 leading-none mb-4">
           𗀀
         </div>
         <h1 class="font-ui text-4xl md:text-5xl font-bold text-brown-900 dark:text-beige-100 mb-4">
@@ -65,41 +62,13 @@ const sampleCharacters = characters
         </div>
       </div>
 
-      <!-- Browse Section -->
+      <!-- Searchable Index -->
       <div class="mb-12">
-        <div class="bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 p-6 border-2 border-brown-900 dark:border-beige-100">
-          <h2 class="font-ui text-2xl font-bold mb-6">Browse Characters</h2>
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a href="/errata" class="block p-4 bg-beige-100 dark:bg-brown-800 text-brown-900 dark:text-beige-100 border-2 border-transparent hover:border-beige-300 dark:hover:border-brown-600 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beige-100 dark:focus-visible:ring-brown-900">
-              <div class="font-ui text-lg font-bold mb-1">Errata</div>
-              <div class="font-ui text-sm text-brown-600 dark:text-beige-400">Characters with data quality issues</div>
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <!-- Sample Characters -->
-      <div>
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="font-ui text-xl font-bold text-brown-900 dark:text-beige-100">
-            Sample Characters
-          </h2>
-        </div>
-        <div class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-          {sampleCharacters.map((char) => (
-            <a 
-              href={`/character/${char.unicode_string}`}
-              class="flex flex-col items-center justify-center p-3 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100 hover:bg-brown-900 hover:text-beige-100 dark:hover:bg-beige-100 dark:hover:text-brown-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100"
-            >
-              <span class="font-tangut text-2xl mb-1">{char.unicode}</span>
-              <span class="font-mono text-xs text-brown-600 dark:text-beige-400">{char.unicode_string.slice(2)}</span>
-            </a>
-          ))}
-        </div>
+        <SearchableIndex client:load />
       </div>
 
       <!-- About Section -->
-      <div class="mt-16 p-6 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100">
+      <div class="mt-8 p-6 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100">
         <h2 class="font-ui text-xl font-bold text-brown-900 dark:text-beige-100 mb-4">About Tangut</h2>
         <div class="font-ui text-brown-700 dark:text-beige-300 space-y-4 max-w-2xl">
           <p>

@@ -1,17 +1,14 @@
 import { createSignal, createEffect, Show, onMount, onCleanup } from 'solid-js';
 
-interface FlashcardCharacter {
+interface FlashcardItem {
   unicode: string;
   unicode_string: string;
   gong_huangcheng_reading?: string;
   rhyme_class?: string;
   english_definition?: string;
-  ids_sequence: string;
-}
-
-interface FlashcardData {
-  components: FlashcardCharacter[];
-  cards: FlashcardCharacter[];
+  ids_sequence?: string;
+  type: 'character' | 'component';
+  componentName?: string;
 }
 
 function getTone(rhymeClass?: string): string {
@@ -35,7 +32,7 @@ function setStoredProgress(progress: number) {
 }
 
 export default function FlashcardApp() {
-  const [data, setData] = createSignal<FlashcardData | null>(null);
+  const [data, setData] = createSignal<{ items: FlashcardItem[] } | null>(null);
   const [loading, setLoading] = createSignal(true);
   const [currentIndex, setCurrentIndex] = createSignal(0);
   const [isFlipped, setIsFlipped] = createSignal(false);
@@ -46,11 +43,17 @@ export default function FlashcardApp() {
   onMount(async () => {
     try {
       const response = await fetch('/api/flashcards.json');
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
       const json = await response.json();
+      if (!json.items) {
+        throw new Error('Invalid response: missing items');
+      }
       setData(json);
       
       const stored = getStoredProgress();
-      const total = json.components.length + json.cards.length;
+      const total = json.items.length;
       setCurrentIndex(Math.min(stored, total));
     } catch (e) {
       console.error('Failed to load flashcards:', e);
@@ -83,14 +86,14 @@ export default function FlashcardApp() {
     const d = data();
     if (!d) return;
     
-    const total = d.components.length + d.cards.length;
+    const total = d.items.length;
     if (currentIndex() < total - 1) {
       setCurrentIndex(currentIndex() + 1);
       setIsFlipped(false);
       setStoredProgress(currentIndex() + 1);
       
-      const isComponent = currentIndex() + 1 < d.components.length;
-      setAnnouncement(isComponent ? 'New component' : 'Next card');
+      const item = d.items[currentIndex() + 1];
+      setAnnouncement(item?.type === 'component' ? 'New component' : 'Next card');
     }
   };
 
@@ -109,21 +112,18 @@ export default function FlashcardApp() {
     setAnnouncement('Progress reset');
   };
 
-  const currentCard = () => {
+  const currentCard = (): FlashcardItem | null => {
     const d = data();
     if (!d) return null;
     
     const idx = currentIndex();
-    if (idx < d.components.length) {
-      return { ...d.components[idx], isComponent: true };
-    }
-    return { ...d.cards[idx - d.components.length], isComponent: false };
+    return d.items[idx] || null;
   };
 
   const progress = () => {
     const d = data();
     if (!d) return { current: 0, total: 0, percent: 0 };
-    const total = d.components.length + d.cards.length;
+    const total = d.items.length;
     return {
       current: currentIndex() + 1,
       total,
@@ -173,69 +173,80 @@ export default function FlashcardApp() {
             </div>
           </div>
 
-          {/* Flashcard */}
-          <div class="perspective-1000 mb-6">
-            <div
-              ref={cardRef}
-              onClick={flipCard}
-              class="relative w-full aspect-[3/2] cursor-pointer"
-              style={{ "perspective": "1000px" }}
-            >
-              <div
-                class="absolute inset-0 transition-transform duration-500 preserve-3d"
-                style={{
-                  "transform-style": "preserve-3d",
-                  "transform": isFlipped() ? "rotateY(180deg)" : "rotateY(0deg)"
-                }}
-              >
-                {/* Front */}
-                <div
-                  class="absolute inset-0 flex flex-col items-center justify-center p-8 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100 rounded-lg backface-hidden"
-                  style={{ "backface-visibility": "hidden" }}
-                >
-                  <Show when={currentCard()?.isComponent}>
-                    <div class="absolute top-4 left-4 font-ui text-xs uppercase tracking-widest text-brown-500 dark:text-beige-500">
-                      Component
-                    </div>
-                  </Show>
-                  <div class="font-reading text-2xl text-brown-700 dark:text-beige-300 mb-2">
-                    {currentCard()?.gong_huangcheng_reading}{getTone(currentCard()?.rhyme_class)}
-                  </div>
-                  <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
-                    {currentCard()?.unicode}
-                  </div>
-                  <div class="font-mono text-sm text-brown-500 dark:text-beige-500">
-                    {currentCard()?.ids_sequence}
-                  </div>
-                  <div class="mt-4 font-ui text-sm text-brown-500 dark:text-beige-500">
-                    Click or press Space to reveal
-                  </div>
+          {/* Component Section Header */}
+          <Show when={currentCard()?.type === 'component'}>
+            <div class="mb-6 p-4 bg-brown-200 dark:bg-brown-700 border-2 border-brown-300 dark:border-brown-500 rounded-lg">
+              <div class="text-center">
+                <div class="font-ui text-xs uppercase tracking-widest text-brown-500 dark:text-beige-500 mb-2">
+                  Component
                 </div>
+                <div class="font-tangut text-5xl text-brown-900 dark:text-beige-100 mx-auto">
+                  {currentCard()?.unicode}
+                </div>
+              </div>
+            </div>
+          </Show>
 
-                {/* Back */}
+          {/* Character Flashcard */}
+          <Show when={currentCard()?.type === 'character'}>
+            <div class="perspective-1000 mb-6">
+              <div
+                ref={cardRef}
+                onClick={flipCard}
+                class="relative w-full aspect-[3/2] cursor-pointer"
+                style={{ "perspective": "1000px" }}
+              >
                 <div
-                  class="absolute inset-0 flex flex-col items-center justify-center p-8 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100 rounded-lg backface-hidden"
-                  style={{ 
-                    "backface-visibility": "hidden",
-                    "transform": "rotateY(180deg)"
+                  class="absolute inset-0 transition-transform duration-500 preserve-3d"
+                  style={{
+                    "transform-style": "preserve-3d",
+                    "transform": isFlipped() ? "rotateY(180deg)" : "rotateY(0deg)"
                   }}
                 >
-                  <div class="font-reading text-2xl text-brown-700 dark:text-beige-300 mb-2">
-                    {currentCard()?.gong_huangcheng_reading}{getTone(currentCard()?.rhyme_class)}
+                  {/* Front */}
+                  <div
+                    class="absolute inset-0 flex flex-col items-center justify-center p-8 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100 rounded-lg backface-hidden"
+                    style={{ "backface-visibility": "hidden" }}
+                  >
+                    <div class="font-reading text-2xl text-brown-700 dark:text-beige-300 mb-2">
+                      {currentCard()?.gong_huangcheng_reading}{getTone(currentCard()?.rhyme_class)}
+                    </div>
+                    <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
+                      {currentCard()?.unicode}
+                    </div>
+                    <div class="font-mono text-sm text-brown-500 dark:text-beige-500">
+                      {currentCard()?.ids_sequence}
+                    </div>
+                    <div class="mt-4 font-ui text-sm text-brown-500 dark:text-beige-500">
+                      Click or press Space to reveal
+                    </div>
                   </div>
-                  <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
-                    {currentCard()?.unicode}
-                  </div>
-                  <div class="font-mono text-sm text-brown-500 dark:text-beige-500 mb-4">
-                    {currentCard()?.ids_sequence}
-                  </div>
-                  <div class="font-ui text-xl text-brown-900 dark:text-beige-100 text-center font-semibold">
-                    {currentCard()?.english_definition}
+
+                  {/* Back */}
+                  <div
+                    class="absolute inset-0 flex flex-col items-center justify-center p-8 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100 rounded-lg backface-hidden"
+                    style={{ 
+                      "backface-visibility": "hidden",
+                      "transform": "rotateY(180deg)"
+                    }}
+                  >
+                    <div class="font-reading text-2xl text-brown-700 dark:text-beige-300 mb-2">
+                      {currentCard()?.gong_huangcheng_reading}{getTone(currentCard()?.rhyme_class)}
+                    </div>
+                    <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
+                      {currentCard()?.unicode}
+                    </div>
+                    <div class="font-mono text-sm text-brown-500 dark:text-beige-500 mb-4">
+                      {currentCard()?.ids_sequence}
+                    </div>
+                    <div class="font-ui text-xl text-brown-900 dark:text-beige-100 text-center font-semibold">
+                      {currentCard()?.english_definition}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+          </Show>
 
           {/* Controls */}
           <div class="flex justify-center gap-4">
@@ -247,7 +258,7 @@ export default function FlashcardApp() {
               ← Previous
             </button>
             
-            <Show when={!isFlipped()}>
+            <Show when={currentCard()?.type === 'character' && !isFlipped()}>
               <button
                 onClick={flipCard}
                 class="font-ui text-sm px-6 py-2 bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
@@ -256,7 +267,7 @@ export default function FlashcardApp() {
               </button>
             </Show>
             
-            <Show when={isFlipped()}>
+            <Show when={currentCard()?.type === 'component' || isFlipped()}>
               <button
                 onClick={nextCard}
                 class="font-ui text-sm px-6 py-2 bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
@@ -267,7 +278,7 @@ export default function FlashcardApp() {
           </div>
 
           {/* Completion message */}
-          <Show when={currentIndex() === progress().total - 1 && isFlipped()}>
+          <Show when={currentIndex() === progress().total - 1 && (currentCard()?.type === 'character' ? isFlipped() : true)}>
             <div class="mt-8 text-center">
               <p class="font-ui text-lg text-brown-700 dark:text-beige-300">
                 Congratulations! You've completed all flashcards.

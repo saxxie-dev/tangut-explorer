@@ -1,4 +1,4 @@
-import { createSignal, createEffect, Show, onMount, onCleanup } from 'solid-js';
+import { createSignal, createEffect, Show, onMount, onCleanup } from "solid-js";
 
 interface FlashcardItem {
   unicode: string;
@@ -7,27 +7,27 @@ interface FlashcardItem {
   rhyme_class?: string;
   english_definition?: string;
   ids_sequence?: string;
-  type: 'character' | 'component';
+  type: "character" | "component";
   componentName?: string;
 }
 
 function getTone(rhymeClass?: string): string {
-  if (!rhymeClass) return '';
-  if (rhymeClass.startsWith('1')) return '¹';
-  if (rhymeClass.startsWith('2')) return '²';
-  return '';
+  if (!rhymeClass) return "";
+  if (rhymeClass.startsWith("1")) return "¹";
+  if (rhymeClass.startsWith("2")) return "²";
+  return "";
 }
 
-const STORAGE_KEY = 'tangut-flashcard-progress';
+const STORAGE_KEY = "tangut-flashcard-progress";
 
 function getStoredProgress(): number {
-  if (typeof window === 'undefined') return 0;
+  if (typeof window === "undefined") return 0;
   const stored = localStorage.getItem(STORAGE_KEY);
   return stored ? parseInt(stored, 10) : 0;
 }
 
 function setStoredProgress(progress: number) {
-  if (typeof window === 'undefined') return;
+  if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, String(progress));
 }
 
@@ -36,46 +36,46 @@ export default function FlashcardApp() {
   const [loading, setLoading] = createSignal(true);
   const [currentIndex, setCurrentIndex] = createSignal(0);
   const [isFlipped, setIsFlipped] = createSignal(false);
-  const [announcement, setAnnouncement] = createSignal('');
+  const [announcement, setAnnouncement] = createSignal("");
 
   let cardRef: HTMLDivElement | undefined;
 
   onMount(async () => {
     try {
-      const response = await fetch('/api/flashcards.json');
+      const response = await fetch("/api/flashcards.json");
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
       const json = await response.json();
       if (!json.items) {
-        throw new Error('Invalid response: missing items');
+        throw new Error("Invalid response: missing items");
       }
       setData(json);
-      
+
       const stored = getStoredProgress();
       const total = json.items.length;
       setCurrentIndex(Math.min(stored, total));
     } catch (e) {
-      console.error('Failed to load flashcards:', e);
+      console.error("Failed to load flashcards:", e);
     } finally {
       setLoading(false);
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === ' ' || e.key === 'Enter') {
+      if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         flipCard();
-      } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
         e.preventDefault();
         nextCard();
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
         e.preventDefault();
         prevCard();
       }
     };
-    
-    document.addEventListener('keydown', handleKeyDown);
-    onCleanup(() => document.removeEventListener('keydown', handleKeyDown));
+
+    document.addEventListener("keydown", handleKeyDown);
+    onCleanup(() => document.removeEventListener("keydown", handleKeyDown));
   });
 
   const flipCard = () => {
@@ -85,15 +85,17 @@ export default function FlashcardApp() {
   const nextCard = () => {
     const d = data();
     if (!d) return;
-    
+
     const total = d.items.length;
     if (currentIndex() < total - 1) {
       setCurrentIndex(currentIndex() + 1);
       setIsFlipped(false);
       setStoredProgress(currentIndex() + 1);
-      
+
       const item = d.items[currentIndex() + 1];
-      setAnnouncement(item?.type === 'component' ? 'New component' : 'Next card');
+      setAnnouncement(
+        item?.type === "component" ? "New component" : "Next card",
+      );
     }
   };
 
@@ -109,13 +111,13 @@ export default function FlashcardApp() {
     setCurrentIndex(0);
     setIsFlipped(false);
     setStoredProgress(0);
-    setAnnouncement('Progress reset');
+    setAnnouncement("Progress reset");
   };
 
   const currentCard = (): FlashcardItem | null => {
     const d = data();
     if (!d) return null;
-    
+
     const idx = currentIndex();
     return d.items[idx] || null;
   };
@@ -127,23 +129,29 @@ export default function FlashcardApp() {
     return {
       current: currentIndex() + 1,
       total,
-      percent: ((currentIndex() + 1) / total) * 100
+      percent: ((currentIndex() + 1) / total) * 100,
     };
   };
 
   return (
     <div>
-      <Show when={!loading()} fallback={
-        <div class="text-center py-12 text-brown-600 dark:text-beige-400 font-ui">
-          Loading flashcards...
-        </div>
-      }>
-        <Show when={data()} fallback={
+      <Show
+        when={!loading()}
+        fallback={
           <div class="text-center py-12 text-brown-600 dark:text-beige-400 font-ui">
-            No flashcards available.
+            Loading flashcards...
           </div>
-        }>
-          <div 
+        }
+      >
+        <Show
+          when={data()}
+          fallback={
+            <div class="text-center py-12 text-brown-600 dark:text-beige-400 font-ui">
+              No flashcards available.
+            </div>
+          }
+        >
+          <div
             role="status"
             aria-live="polite"
             aria-atomic="true"
@@ -166,21 +174,21 @@ export default function FlashcardApp() {
               </button>
             </div>
             <div class="h-2 bg-brown-200 dark:bg-brown-700 rounded-full overflow-hidden">
-              <div 
+              <div
                 class="h-full bg-brown-900 dark:bg-beige-100 transition-all duration-300"
                 style={{ width: `${progress().percent}%` }}
               />
             </div>
           </div>
 
-          {/* Component Section Header */}
-          <Show when={currentCard()?.type === 'component'}>
-            <div class="mb-6 p-4 bg-brown-200 dark:bg-brown-700 border-2 border-brown-300 dark:border-brown-500 rounded-lg">
+          {/* Component - transparent, same dimensions as character card */}
+          <Show when={currentCard()?.type === "component"}>
+            <div class="mb-6 aspect-[3/2] flex flex-col items-center justify-center">
               <div class="text-center">
                 <div class="font-ui text-xs uppercase tracking-widest text-brown-500 dark:text-beige-500 mb-2">
                   Component
                 </div>
-                <div class="font-tangut text-5xl text-brown-900 dark:text-beige-100 mx-auto">
+                <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100">
                   {currentCard()?.unicode}
                 </div>
               </div>
@@ -188,19 +196,21 @@ export default function FlashcardApp() {
           </Show>
 
           {/* Character Flashcard */}
-          <Show when={currentCard()?.type === 'character'}>
+          <Show when={currentCard()?.type === "character"}>
             <div class="perspective-1000 mb-6">
               <div
                 ref={cardRef}
                 onClick={flipCard}
                 class="relative w-full aspect-[3/2] cursor-pointer"
-                style={{ "perspective": "1000px" }}
+                style={{ perspective: "1000px" }}
               >
                 <div
                   class="absolute inset-0 transition-transform duration-500 preserve-3d"
                   style={{
                     "transform-style": "preserve-3d",
-                    "transform": isFlipped() ? "rotateY(180deg)" : "rotateY(0deg)"
+                    transform: isFlipped()
+                      ? "rotateY(180deg)"
+                      : "rotateY(0deg)",
                   }}
                 >
                   {/* Front */}
@@ -209,7 +219,8 @@ export default function FlashcardApp() {
                     style={{ "backface-visibility": "hidden" }}
                   >
                     <div class="font-reading text-2xl text-brown-700 dark:text-beige-300 mb-2">
-                      {currentCard()?.gong_huangcheng_reading}{getTone(currentCard()?.rhyme_class)}
+                      {currentCard()?.gong_huangcheng_reading}
+                      {getTone(currentCard()?.rhyme_class)}
                     </div>
                     <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
                       {currentCard()?.unicode}
@@ -225,13 +236,14 @@ export default function FlashcardApp() {
                   {/* Back */}
                   <div
                     class="absolute inset-0 flex flex-col items-center justify-center p-8 bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100 rounded-lg backface-hidden"
-                    style={{ 
+                    style={{
                       "backface-visibility": "hidden",
-                      "transform": "rotateY(180deg)"
+                      transform: "rotateY(180deg)",
                     }}
                   >
                     <div class="font-reading text-2xl text-brown-700 dark:text-beige-300 mb-2">
-                      {currentCard()?.gong_huangcheng_reading}{getTone(currentCard()?.rhyme_class)}
+                      {currentCard()?.gong_huangcheng_reading}
+                      {getTone(currentCard()?.rhyme_class)}
                     </div>
                     <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
                       {currentCard()?.unicode}
@@ -253,24 +265,24 @@ export default function FlashcardApp() {
             <button
               onClick={prevCard}
               disabled={currentIndex() === 0}
-              class="font-ui text-sm px-4 py-2 border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800 text-brown-900 dark:text-beige-100 hover:bg-brown-200 dark:hover:bg-brown-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
+              class="font-ui text-sm px-6 py-2 min-w-[10rem] border-2 border-brown-900 dark:border-beige-100 bg-beige-100 dark:bg-brown-800 text-brown-900 dark:text-beige-100 hover:bg-brown-200 dark:hover:bg-brown-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
             >
               ← Previous
             </button>
-            
-            <Show when={currentCard()?.type === 'character' && !isFlipped()}>
+
+            <Show when={currentCard()?.type === "character" && !isFlipped()}>
               <button
                 onClick={flipCard}
-                class="font-ui text-sm px-6 py-2 bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
+                class="font-ui text-sm px-6 py-2 min-w-[10rem] bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
               >
                 Show Answer
               </button>
             </Show>
-            
-            <Show when={currentCard()?.type === 'component' || isFlipped()}>
+
+            <Show when={currentCard()?.type === "component" || isFlipped()}>
               <button
                 onClick={nextCard}
-                class="font-ui text-sm px-6 py-2 bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
+                class="font-ui text-sm px-6 py-2 min-w-[10rem] bg-brown-900 dark:bg-beige-100 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brown-900 dark:focus-visible:ring-beige-100 rounded"
               >
                 Next →
               </button>
@@ -278,7 +290,12 @@ export default function FlashcardApp() {
           </div>
 
           {/* Completion message */}
-          <Show when={currentIndex() === progress().total - 1 && (currentCard()?.type === 'character' ? isFlipped() : true)}>
+          <Show
+            when={
+              currentIndex() === progress().total - 1 &&
+              (currentCard()?.type === "character" ? isFlipped() : true)
+            }
+          >
             <div class="mt-8 text-center">
               <p class="font-ui text-lg text-brown-700 dark:text-beige-300">
                 Congratulations! You've completed all flashcards.

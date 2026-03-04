@@ -2,17 +2,17 @@
 ---
 
 <header class="bg-brown-900 dark:bg-beige-100 border-b-2 border-beige-100 dark:border-brown-900 sticky top-0 z-50">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between h-20">
+  <div class="max-w-7xl mx-auto px-2 sm:px-4">
+    <div class="flex items-center justify-between h-16">
       <!-- Logo/Title -->
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 sm:gap-4">
         <a href="/" class="group focus-visible:outline-none" aria-label="Tangut Explorer home">
-          <div class="font-tangut text-4xl text-beige-100 dark:text-brown-900 leading-none">
+          <div class="font-tangut text-3xl sm:text-4xl text-beige-100 dark:text-brown-900 leading-none">
             𗼎
           </div>
         </a>
-        <a href="/" class="group focus-visible:outline-none">
-          <h1 class="font-ui text-2xl md:text-3xl font-bold text-beige-100 dark:text-brown-900 tracking-tight">
+        <a href="/" class="group focus-visible:outline-none hidden sm:block">
+          <h1 class="font-ui text-xl sm:text-2xl md:text-3xl font-bold text-beige-100 dark:text-brown-900 tracking-tight">
             TANGUT EXPLORER
           </h1>
           <p class="font-ui text-xs text-beige-300 dark:text-brown-700 uppercase tracking-widest">
@@ -21,8 +21,22 @@
         </a>
       </div>
       
-      <!-- Navigation -->
-      <nav class="flex items-center gap-1" aria-label="Main navigation">
+      <!-- Mobile Menu Button -->
+      <button
+        id="mobile-menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        class="sm:hidden p-2 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beige-100"
+        aria-label="Toggle menu"
+      >
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path id="menu-icon" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      
+      <!-- Desktop Navigation -->
+      <nav class="hidden sm:flex items-center gap-1" aria-label="Main navigation">
         <a 
           href="/" 
           class="font-ui text-sm font-semibold px-4 py-2 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beige-100 dark:focus-visible:ring-brown-900"
@@ -36,12 +50,9 @@
         >
           Flashcards
         </a>
-      </nav>
-      
-      <!-- Controls -->
-      <div class="flex items-center gap-6">
+        
         <!-- Theme Toggle -->
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-3 ml-4">
           <span id="theme-label" class="font-ui text-xs text-beige-300 dark:text-brown-700 uppercase tracking-widest sr-only">Theme</span>
           <button
             id="theme-toggle"
@@ -55,51 +66,79 @@
             <div class="absolute top-0 left-0 w-5 h-4 bg-brown-900 dark:bg-beige-100 transition-transform duration-300 m-0.5 dark:translate-x-5" aria-hidden="true"></div>
           </button>
         </div>
-      </div>
+      </nav>
     </div>
+    
+    <!-- Mobile Menu (collapsible) -->
+    <nav id="mobile-menu" class="hidden sm:hidden pb-4" aria-label="Mobile navigation">
+      <div class="flex flex-col gap-2">
+        <a 
+          href="/" 
+          class="font-ui text-base font-semibold px-4 py-2 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beige-100 dark:focus-visible:ring-brown-900"
+        >
+          Dictionary
+        </a>
+        <a 
+          href="/flashcards" 
+          class="font-ui text-base font-semibold px-4 py-2 text-beige-100 dark:text-brown-900 hover:bg-brown-800 dark:hover:bg-beige-200 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beige-100 dark:focus-visible:ring-brown-900"
+        >
+          Flashcards
+        </a>
+        <div class="flex items-center gap-3 px-4 pt-2">
+          <span class="font-ui text-xs text-beige-300 dark:text-brown-700">Theme:</span>
+          <button
+            id="mobile-theme-toggle"
+            type="button"
+            role="switch"
+            aria-checked="false"
+            class="relative w-10 h-5 bg-beige-100 dark:bg-brown-900 border border-brown-900 dark:border-beige-100 transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-beige-100"
+          >
+            <div class="absolute top-0 left-0 w-4 h-3 bg-brown-900 dark:bg-beige-100 transition-transform duration-300 m-0.5 dark:translate-x-4" aria-hidden="true"></div>
+          </button>
+        </div>
+      </div>
+    </nav>
   </div>
 </header>
 
 <script>
   function toggleTheme() {
     const html = document.documentElement;
-    const button = document.getElementById('theme-toggle');
     const isDark = html.classList.contains('dark');
     
     if (isDark) {
       html.classList.remove('dark');
       localStorage.setItem('theme', 'light');
-      if (button) {
-        button.setAttribute('aria-checked', 'false');
-        button.querySelector('span')?.setAttribute('text', 'Switch to dark theme');
-      }
     } else {
       html.classList.add('dark');
       localStorage.setItem('theme', 'dark');
-      if (button) {
-        button.setAttribute('aria-checked', 'true');
-      }
     }
-
-    // PostHog tracking
-    if (typeof posthog !== 'undefined') {
-        posthog.capture('theme_toggled', { theme: isDark ? 'light' : 'dark' });
-    }
+    
+    updateThemeButtons();
   }
-
-  // Set initial ARIA state
-  document.addEventListener('DOMContentLoaded', () => {
-    const button = document.getElementById('theme-toggle');
+  
+  function updateThemeButtons() {
     const isDark = document.documentElement.classList.contains('dark');
-    if (button) {
-      button.setAttribute('aria-checked', String(isDark));
-    }
+    document.querySelectorAll('#theme-toggle, #mobile-theme-toggle').forEach((btn) => {
+      btn.setAttribute('aria-checked', String(isDark));
+    });
+  }
+  
+  // Mobile menu toggle
+  const menuToggle = document.getElementById('mobile-menu-toggle');
+  const mobileMenu = document.getElementById('mobile-menu');
+  const menuIcon = document.getElementById('menu-icon');
+  
+  menuToggle?.addEventListener('click', () => {
+    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+    menuToggle.setAttribute('aria-expanded', String(!isExpanded));
+    mobileMenu?.classList.toggle('hidden', isExpanded);
   });
-
-  document.addEventListener('DOMContentLoaded', () => {
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-      themeToggle.addEventListener('click', toggleTheme);
-    }
-  });
+  
+  // Theme toggle handlers
+  document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
+  document.getElementById('mobile-theme-toggle')?.addEventListener('click', toggleTheme);
+  
+  // Initialize theme state
+  document.addEventListener('DOMContentLoaded', updateThemeButtons);
 </script>

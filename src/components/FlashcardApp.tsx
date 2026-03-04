@@ -37,8 +37,58 @@ export default function FlashcardApp() {
   const [currentIndex, setCurrentIndex] = createSignal(0);
   const [isFlipped, setIsFlipped] = createSignal(false);
   const [announcement, setAnnouncement] = createSignal("");
+  const [flipKey, setFlipKey] = createSignal(0);
+  const [noTransition, setNoTransition] = createSignal(false);
 
   let cardRef: HTMLDivElement | undefined;
+  let cardContainer: HTMLDivElement | undefined;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let isSwiping = false;
+
+  const SWIPE_THRESHOLD = 50;
+
+  const handlePointerDown = (e: PointerEvent) => {
+    touchStartX = e.clientX;
+    touchStartY = e.clientY;
+    isSwiping = true;
+  };
+
+  const handlePointerMove = (e: PointerEvent) => {
+    if (!isSwiping) return;
+    
+    const deltaX = e.clientX - touchStartX;
+    const deltaY = e.clientY - touchStartY;
+    
+    // If horizontal swipe exceeds threshold, prevent default to stop scroll
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      e.preventDefault();
+    }
+  };
+
+  const handlePointerUp = (e: PointerEvent) => {
+    if (!isSwiping) return;
+    isSwiping = false;
+
+    const deltaX = e.clientX - touchStartX;
+    const deltaY = e.clientY - touchStartY;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+      if (deltaX > 0) {
+        prevCard();
+      } else {
+        if (currentCard()?.type === "character" && !isFlipped()) {
+          flipCard();
+        } else {
+          nextCard();
+        }
+      }
+    }
+  };
+
+  const handlePointerCancel = () => {
+    isSwiping = false;
+  };
 
   onMount(async () => {
     try {
@@ -76,9 +126,56 @@ export default function FlashcardApp() {
 
     document.addEventListener("keydown", handleKeyDown);
     onCleanup(() => document.removeEventListener("keydown", handleKeyDown));
+
+    const initSwipe = () => {
+      if (cardContainer) {
+        cardContainer.addEventListener("pointerdown", handlePointerDown);
+        cardContainer.addEventListener("pointermove", handlePointerMove);
+        cardContainer.addEventListener("pointerup", handlePointerUp);
+        cardContainer.addEventListener("pointercancel", handlePointerCancel);
+        cardContainer.addEventListener("pointerleave", handlePointerCancel);
+        cardContainer.addEventListener("pointerleave", handlePointerUp);
+        cardContainer.addEventListener("touchstart", (e) => {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          isSwiping = true;
+        }, { passive: true });
+        cardContainer.addEventListener("touchmove", (e) => {
+          if (!isSwiping) return;
+          const deltaX = e.touches[0].clientX - touchStartX;
+          const deltaY = e.touches[0].clientY - touchStartY;
+          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+            e.preventDefault();
+          }
+        }, { passive: false });
+        cardContainer.addEventListener("touchend", (e: Event) => {
+          const touchEvent = e as TouchEvent;
+          if (!isSwiping) return;
+          isSwiping = false;
+
+          const deltaX = touchEvent.changedTouches[0].clientX - touchStartX;
+          const deltaY = touchEvent.changedTouches[0].clientY - touchStartY;
+
+          if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+            if (deltaX > 0) {
+              prevCard();
+            } else {
+              if (currentCard()?.type === "character" && !isFlipped()) {
+                flipCard();
+              } else {
+                nextCard();
+              }
+            }
+          }
+        });
+      }
+    };
+
+    requestAnimationFrame(() => requestAnimationFrame(initSwipe));
   });
 
   const flipCard = () => {
+    setFlipKey(k => k + 1);
     setIsFlipped(!isFlipped());
   };
 
@@ -88,11 +185,17 @@ export default function FlashcardApp() {
 
     const total = d.items.length;
     if (currentIndex() < total - 1) {
-      setCurrentIndex(currentIndex() + 1);
+      const nextIdx = currentIndex() + 1;
+      const item = d.items[nextIdx];
+      
+      setNoTransition(true);
       setIsFlipped(false);
-      setStoredProgress(currentIndex() + 1);
+      setFlipKey(k => k + 1);
+      setCurrentIndex(nextIdx);
+      setStoredProgress(nextIdx);
 
-      const item = d.items[currentIndex() + 1];
+      setTimeout(() => setNoTransition(false), 50);
+
       setAnnouncement(
         item?.type === "component" ? "New component" : "Next card",
       );
@@ -101,9 +204,14 @@ export default function FlashcardApp() {
 
   const prevCard = () => {
     if (currentIndex() > 0) {
-      setCurrentIndex(currentIndex() - 1);
+      const prevIdx = currentIndex() - 1;
+      setNoTransition(true);
       setIsFlipped(false);
-      setStoredProgress(currentIndex() - 1);
+      setFlipKey(k => k + 1);
+      setCurrentIndex(prevIdx);
+      setStoredProgress(prevIdx);
+
+      setTimeout(() => setNoTransition(false), 50);
     }
   };
 
@@ -197,7 +305,7 @@ export default function FlashcardApp() {
 
           {/* Character Flashcard */}
           <Show when={currentCard()?.type === "character"}>
-            <div class="perspective-1000 mb-6">
+            <div ref={cardContainer} class="perspective-1000 mb-6 select-none" key={flipKey()}>
               <div
                 ref={cardRef}
                 onClick={flipCard}
@@ -205,7 +313,7 @@ export default function FlashcardApp() {
                 style={{ perspective: "1000px" }}
               >
                 <div
-                  class="absolute inset-0 transition-transform duration-500 preserve-3d"
+                  class={"absolute inset-0 " + (noTransition() ? "" : "transition-transform duration-500 ") + "preserve-3d"}
                   style={{
                     "transform-style": "preserve-3d",
                     transform: isFlipped()
@@ -225,9 +333,6 @@ export default function FlashcardApp() {
                     <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
                       {currentCard()?.unicode}
                     </div>
-                    <div class="font-mono text-sm text-brown-500 dark:text-beige-500">
-                      {currentCard()?.ids_sequence}
-                    </div>
                     <div class="mt-4 font-ui text-sm text-brown-500 dark:text-beige-500">
                       Click or press Space to reveal
                     </div>
@@ -245,11 +350,8 @@ export default function FlashcardApp() {
                       {currentCard()?.gong_huangcheng_reading}
                       {getTone(currentCard()?.rhyme_class)}
                     </div>
-                    <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-2">
+                    <div class="font-tangut text-7xl text-brown-900 dark:text-beige-100 mb-4">
                       {currentCard()?.unicode}
-                    </div>
-                    <div class="font-mono text-sm text-brown-500 dark:text-beige-500 mb-4">
-                      {currentCard()?.ids_sequence}
                     </div>
                     <div class="font-ui text-xl text-brown-900 dark:text-beige-100 text-center font-semibold">
                       {currentCard()?.english_definition}

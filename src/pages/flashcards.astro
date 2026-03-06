@@ -5,17 +5,19 @@ import FlashcardApp from '../components/FlashcardApp';
 ---
 
 <Layout title="Flashcards - Tangut Explorer">
-  <div class="min-h-screen">
+  <div class="min-h-screen h-screen overflow-hidden touch-none">
     <Header />
     
-    <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full overflow-hidden">
       <div class="mb-6">
         <p class="font-ui text-sm text-brown-600 dark:text-beige-400">
           Your progress is saved to localStorage.
         </p>
       </div>
       
-      <FlashcardApp client:load />
+      <div class="h-[calc(100%-3rem)] overflow-hidden">
+        <FlashcardApp client:load />
+      </div>
     </main>
   </div>
 </Layout>

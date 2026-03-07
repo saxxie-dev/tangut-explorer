@@ -82,7 +82,8 @@ const hasMore = collapsible && characters && characters.length > defaultVisible;
       const isExpanded = btn.getAttribute('data-expanded') === 'true';
       const total = parseInt(btn.getAttribute('data-total') || '0');
       const defaultVisible = parseInt(btn.getAttribute('data-default') || '12');
-      const grid = btn.closest('div').previousElementSibling as HTMLElement;
+      const grid = btn.closest('div')?.previousElementSibling as HTMLElement;
+      if (!grid) return;
       
       if (!grid) return;
       

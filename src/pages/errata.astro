@@ -2,7 +2,7 @@
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
 import RelatedCharacterSection from '../components/RelatedCharacterSection.astro';
-import { getAllCharacterData, type CharacterData } from '../utils/database.ts';
+import { getAllCharacterData } from '../utils/database.ts';
 
 const allCharacters = await getAllCharacterData();
   

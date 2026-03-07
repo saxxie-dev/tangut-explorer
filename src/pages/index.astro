@@ -7,7 +7,6 @@ import { getAllCharacterData } from '../utils/database';
 const allCharacters = await getAllCharacterData();
 
 const characters = Array.from(allCharacters.values());
-const totalCharacters = characters.length;
 
 const initialClasses = new Set<string>();
 const rhymeClasses = new Set<string>();
@@ -16,12 +15,6 @@ characters.forEach(char => {
   if (char.initial_class) initialClasses.add(char.initial_class);
   if (char.rhyme_class) rhymeClasses.add(char.rhyme_class);
 });
-
-const errataCount = characters.filter(char => 
-  char.pronunciation_warning || 
-  !char.english_definition?.trim() || 
-  !char.gong_huangcheng_reading?.trim()
-).length;
 ---
 
 <Layout title="Tangut Explorer - Unicode Character Database">

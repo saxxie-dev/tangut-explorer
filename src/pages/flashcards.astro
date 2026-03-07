@@ -1,21 +1,21 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import Header from '../components/Header.astro';
-import FlashcardApp from '../components/FlashcardApp';
+import { FlashcardApp } from '../components/FlashcardApp/FlashcardApp';
 ---
 
 <Layout title="Flashcards - Tangut Explorer">
-  <div class="min-h-screen h-screen overflow-hidden touch-none">
+  <div class="min-h-screen">
     <Header />
     
-    <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-full overflow-hidden">
+    <main id="main-content" class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div class="mb-6">
         <p class="font-ui text-sm text-brown-600 dark:text-beige-400">
           Your progress is saved to localStorage.
         </p>
       </div>
       
-      <div class="h-[calc(100%-3rem)] overflow-hidden">
+      <div>
         <FlashcardApp client:load />
       </div>
     </main>

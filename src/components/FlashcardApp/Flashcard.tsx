@@ -27,7 +27,7 @@ export const Flashcard: Component<FlashcardProps> = (props) => {
                 style={{ "backface-visibility": "hidden", "-webkit-backface-visibility": "hidden" }}
             >
                 {/* Top (1/3) */}
-                <div class="flex-1 w-full flex flex-col justify-between items-center">
+                <div class="flex-1 min-h-0 w-full flex flex-col justify-between items-center">
                     <div class="h-8 flex items-center">
                         <Show when={props.item?.type === "component"}>
                             <div class="font-ui text-xs uppercase tracking-widest text-brown-500 dark:text-beige-500">
@@ -53,7 +53,7 @@ export const Flashcard: Component<FlashcardProps> = (props) => {
                 </div>
 
                 {/* Bottom (1/3) */}
-                <div class="flex-1 w-full flex flex-col items-center">
+                <div class="flex-1 min-h-0 w-full flex flex-col items-center">
                     <div class="h-8 flex items-center font-ui text-sm text-brown-500 dark:text-beige-500">
                         {isCharacter() ? "Click or press Space to reveal" : ""}
                     </div>
@@ -71,7 +71,10 @@ export const Flashcard: Component<FlashcardProps> = (props) => {
                     }}
                 >
                     {/* Top (1/3) */}
-                    <div class="flex-1 w-full flex flex-col justify-end items-center">
+                    <div class="flex-1 min-h-0 w-full flex flex-col justify-between items-center">
+                        <div class="h-8 flex items-center">
+                            {/* Header spacer to match front */}
+                        </div>
                         <div class="h-8 flex items-end">
                             <div class="font-reading text-2xl text-brown-700 dark:text-beige-300">
                                 {props.item?.gong_huangcheng_reading}
@@ -88,7 +91,7 @@ export const Flashcard: Component<FlashcardProps> = (props) => {
                     </div>
 
                     {/* Bottom (1/3) */}
-                    <div class="flex-1 w-full flex flex-col items-center">
+                    <div class="flex-1 min-h-0 w-full flex flex-col items-center">
                         <div class="font-ui text-xl text-brown-900 dark:text-beige-100 text-center font-semibold">
                             {props.item?.english_definition}
                         </div>

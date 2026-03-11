@@ -100,61 +100,63 @@
 </header>
 
 <script>
-  function toggleTheme() {
-    const html = document.documentElement;
-    const isDark = html.classList.contains('dark');
-    
-    if (isDark) {
-      html.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    } else {
-      html.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    }
-  }
-  
-  // Mobile menu toggle
-  const menuToggle = document.getElementById('mobile-menu-toggle');
-  const mobileMenu = document.getElementById('mobile-menu');
-  const line1 = document.getElementById('menu-line-1');
-  const line2 = document.getElementById('menu-line-2');
-  const line3 = document.getElementById('menu-line-3');
-  
-  menuToggle?.addEventListener('click', () => {
-    const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
-    const nextState = !isExpanded;
-    
-    menuToggle.setAttribute('aria-expanded', String(nextState));
-    
-    if (mobileMenu) {
-      if (nextState) {
-        mobileMenu.classList.remove('grid-rows-[0fr]', 'invisible');
-        mobileMenu.classList.add('grid-rows-[1fr]');
+  document.addEventListener('astro:page-load', () => {
+    function toggleTheme() {
+      const html = document.documentElement;
+      const isDark = html.classList.contains('dark');
+      
+      if (isDark) {
+        html.classList.remove('dark');
+        localStorage.setItem('theme', 'light');
       } else {
-        mobileMenu.classList.remove('grid-rows-[1fr]');
-        mobileMenu.classList.add('grid-rows-[0fr]');
-        // Wait for transition to finish before hiding with invisible
-        setTimeout(() => {
-          if (menuToggle.getAttribute('aria-expanded') === 'false') {
-            mobileMenu.classList.add('invisible');
-          }
-        }, 300);
+        html.classList.add('dark');
+        localStorage.setItem('theme', 'dark');
       }
     }
     
-    if (nextState) {
-      // Morph to X
-      line1?.setAttribute('d', 'M6 18L18 6');
-      if (line2) line2.style.opacity = '0';
-      line3?.setAttribute('d', 'M6 6l12 12');
-    } else {
-      // Revert to burger
-      line1?.setAttribute('d', 'M4 6h16');
-      if (line2) line2.style.opacity = '1';
-      line3?.setAttribute('d', 'M4 18h16');
-    }
+    // Mobile menu toggle
+    const menuToggle = document.getElementById('mobile-menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const line1 = document.getElementById('menu-line-1');
+    const line2 = document.getElementById('menu-line-2');
+    const line3 = document.getElementById('menu-line-3');
+    
+    menuToggle?.addEventListener('click', () => {
+      const isExpanded = menuToggle.getAttribute('aria-expanded') === 'true';
+      const nextState = !isExpanded;
+      
+      menuToggle.setAttribute('aria-expanded', String(nextState));
+      
+      if (mobileMenu) {
+        if (nextState) {
+          mobileMenu.classList.remove('grid-rows-[0fr]', 'invisible');
+          mobileMenu.classList.add('grid-rows-[1fr]');
+        } else {
+          mobileMenu.classList.remove('grid-rows-[1fr]');
+          mobileMenu.classList.add('grid-rows-[0fr]');
+          // Wait for transition to finish before hiding with invisible
+          setTimeout(() => {
+            if (menuToggle.getAttribute('aria-expanded') === 'false') {
+              mobileMenu.classList.add('invisible');
+            }
+          }, 300);
+        }
+      }
+      
+      if (nextState) {
+        // Morph to X
+        line1?.setAttribute('d', 'M6 18L18 6');
+        if (line2) line2.style.opacity = '0';
+        line3?.setAttribute('d', 'M6 6l12 12');
+      } else {
+        // Revert to burger
+        line1?.setAttribute('d', 'M4 6h16');
+        if (line2) line2.style.opacity = '1';
+        line3?.setAttribute('d', 'M4 18h16');
+      }
+    });
+    
+    // Theme toggle handlers
+    document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
   });
-  
-  // Theme toggle handlers
-  document.getElementById('theme-toggle')?.addEventListener('click', toggleTheme);
 </script>

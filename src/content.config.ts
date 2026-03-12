@@ -6,11 +6,8 @@ const flashcardsCollection = defineCollection({
     loader: async () => {
         const rawData = await fs.readFile('src/data/flashcards.json', 'utf-8');
         const parsedData = JSON.parse(rawData);
-        // Return array of entries; Astro content collection loaders expect an array of objects
-        // Each object must ideally have an `id`, if not Astro might generate one or it might fail
-        // Looking at the schema, let's map it to an array
         return parsedData.items.map((item: any, i: number) => ({
-            id: item.unicode_string || `flashcard - ${i} `,
+            id: String(i).padStart(6, '0'),
             ...item
         }));
     },

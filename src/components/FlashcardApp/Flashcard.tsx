@@ -24,7 +24,12 @@ export const Flashcard: Component<FlashcardProps> = (props) => {
             <div
                 class={`absolute inset-0 flex flex-col items-center p-8 rounded-lg backface-hidden ${isCharacter() ? "bg-beige-100 dark:bg-brown-800 border-2 border-brown-900 dark:border-beige-100" : ""
                     }`}
-                style={{ "backface-visibility": "hidden", "-webkit-backface-visibility": "hidden" }}
+                style={{
+                    "backface-visibility": "hidden",
+                    "-webkit-backface-visibility": "hidden",
+                    outline: "1px solid transparent",
+                    transform: "rotateY(0deg) translateZ(1px)"
+                }}
             >
                 {/* Top (1/3) */}
                 <div class="flex-1 min-h-0 w-full flex flex-col justify-between items-center">
@@ -67,7 +72,8 @@ export const Flashcard: Component<FlashcardProps> = (props) => {
                     style={{
                         "backface-visibility": "hidden",
                         "-webkit-backface-visibility": "hidden",
-                        transform: "rotateY(180deg)",
+                        outline: "1px solid transparent",
+                        transform: "rotateY(180deg) translateZ(1px)",
                     }}
                 >
                     {/* Top (1/3) */}

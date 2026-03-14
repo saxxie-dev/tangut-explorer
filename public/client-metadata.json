@@ -1,0 +1,20 @@
+{
+  "client_id": "https://tangut-explorer.com/client-metadata.json",
+  "client_name": "Tangut Explorer",
+  "client_uri": "https://tangut-explorer.com",
+  "logo_uri": "https://tangut-explorer.com/favicon.svg",
+  "redirect_uris": [
+    "https://tangut-explorer.com/"
+  ],
+  "scope": "atproto transition:generic rpc:app.bsky.actor.getProfile?aud=did:web:api.bsky.app#bsky_appview",
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "response_types": [
+    "code"
+  ],
+  "token_endpoint_auth_method": "none",
+  "application_type": "web",
+  "dpop_bound_access_tokens": true
+}

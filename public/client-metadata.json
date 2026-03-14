@@ -1,10 +1,10 @@
 {
-  "client_id": "https://tangut-explorer.com/client-metadata.json",
+  "client_id": "https://tangut.saxxie.dev/client-metadata.json",
   "client_name": "Tangut Explorer",
-  "client_uri": "https://tangut-explorer.com",
-  "logo_uri": "https://tangut-explorer.com/favicon.svg",
+  "client_uri": "https://tangut.saxxie.dev",
+  "logo_uri": "https://tangut.saxxie.dev/favicon.svg",
   "redirect_uris": [
-    "https://tangut-explorer.com/"
+    "https://tangut.saxxie.dev/"
   ],
   "scope": "atproto transition:generic rpc:app.bsky.actor.getProfile?aud=did:web:api.bsky.app#bsky_appview",
   "grant_types": [

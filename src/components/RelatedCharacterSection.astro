@@ -68,6 +68,7 @@ const hasMore = collapsible && characters && characters.length > defaultVisible;
           data-expanded="false"
           data-total={characters.length}
           data-default={defaultVisible}
+          aria-expanded="false"
         >
           Show more ({characters.length - defaultVisible} remaining)
         </button>
@@ -77,35 +78,38 @@ const hasMore = collapsible && characters && characters.length > defaultVisible;
 )}
 
 <script>
-  document.querySelectorAll('.show-more-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const isExpanded = btn.getAttribute('data-expanded') === 'true';
-      const total = parseInt(btn.getAttribute('data-total') || '0');
-      const defaultVisible = parseInt(btn.getAttribute('data-default') || '12');
-      const grid = btn.closest('div')?.previousElementSibling as HTMLElement;
-      if (!grid) return;
-      
-      if (!grid) return;
-      
-      const links = grid.querySelectorAll('a');
-      
-      if (isExpanded) {
-        // Collapse
-        links.forEach((link, index) => {
-          if (index >= defaultVisible) {
-            (link as HTMLElement).style.display = 'none';
-          }
-        });
-        btn.textContent = `Show more (${total - defaultVisible} remaining)`;
-        btn.setAttribute('data-expanded', 'false');
-      } else {
-        // Expand
-        links.forEach((link) => {
-          (link as HTMLElement).style.display = 'block';
-        });
-        btn.textContent = 'Show less';
-        btn.setAttribute('data-expanded', 'true');
-      }
+  document.addEventListener('astro:page-load', () => {
+    document.querySelectorAll('.show-more-btn').forEach((btn) => {
+      if (btn.getAttribute('data-has-listener')) return;
+      btn.setAttribute('data-has-listener', 'true');
+
+      btn.addEventListener('click', () => {
+        const isExpanded = btn.getAttribute('data-expanded') === 'true';
+        const total = parseInt(btn.getAttribute('data-total') || '0');
+        const defaultVisible = parseInt(btn.getAttribute('data-default') || '12');
+        const grid = btn.closest('div')?.previousElementSibling as HTMLElement;
+        if (!grid) return;
+
+        const links = grid.querySelectorAll('a');
+
+        if (isExpanded) {
+          links.forEach((link, index) => {
+            if (index >= defaultVisible) {
+              (link as HTMLElement).style.display = 'none';
+            }
+          });
+          btn.textContent = `Show more (${total - defaultVisible} remaining)`;
+          btn.setAttribute('data-expanded', 'false');
+          btn.setAttribute('aria-expanded', 'false');
+        } else {
+          links.forEach((link) => {
+            (link as HTMLElement).style.display = 'block';
+          });
+          btn.textContent = 'Show less';
+          btn.setAttribute('data-expanded', 'true');
+          btn.setAttribute('aria-expanded', 'true');
+        }
+      });
     });
   });
 </script>

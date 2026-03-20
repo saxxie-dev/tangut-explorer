@@ -23,6 +23,7 @@ interface Character {
 interface IndexData {
   characters: Character[];
   initialClasses: string[];
+  initialClassLabels: Record<string, string>;
   rhymeClasses: string[];
 }
 
@@ -346,7 +347,10 @@ export default function SearchableIndex() {
             >
               <option value="">All</option>
               <For each={data()?.initialClasses || []}>
-                {(cls) => <option value={cls}>{cls}</option>}
+                {(cls) => {
+                  const label = data()?.initialClassLabels?.[cls];
+                  return <option value={cls}>{label ? `${cls} (${label})` : cls}</option>;
+                }}
               </For>
             </select>
           </div>

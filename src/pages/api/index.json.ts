@@ -1,4 +1,5 @@
 import { getAllCharacterData } from '../../utils/database';
+import { sortInitialClasses, INITIAL_CLASS_LABELS } from '../../utils/tangut';
 
 export async function GET() {
   const allCharacters = await getAllCharacterData();
@@ -16,12 +17,13 @@ export async function GET() {
     variant_warning: char.variant_warning,
   }));
 
-  const initialClasses = [...new Set(characters.map((c: any) => c.initial_class).filter(Boolean))].sort();
+  const initialClasses = sortInitialClasses([...new Set(characters.map((c: any) => c.initial_class).filter(Boolean))]);
   const rhymeClasses = [...new Set(characters.map((c: any) => c.rhyme_class).filter(Boolean))].sort();
 
   return new Response(JSON.stringify({
     characters,
     initialClasses,
+    initialClassLabels: INITIAL_CLASS_LABELS,
     rhymeClasses,
   }), {
     headers: {

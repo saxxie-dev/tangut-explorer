@@ -2,7 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Header from '../../components/Header.astro';
 import RelatedCharacterSection from '../../components/RelatedCharacterSection.astro';
-import { getUnicodeString, isValidTangutCharacter } from '../../utils/tangut';
+import { getUnicodeString, isValidTangutCharacter, getInitialClassLabel } from '../../utils/tangut';
 import { getAllCharacterData, type CharacterData } from '../../utils/database.ts';
 
 export async function getStaticPaths() {
@@ -21,7 +21,7 @@ if (!characterData || !isValidTangutCharacter(unicodeParam || '')) {
   return Astro.redirect('/404');
 }
 
-const pageTitle = `${characterData.unicode} (${characterData.unicode_string}) - Tangut Explorer`;
+const pageTitle = `${characterData.unicode} (${characterData.unicode_string.toUpperCase()}) - Tangut Explorer`;
 
 let tone = '';
 if (characterData.rhyme_class) {
@@ -112,7 +112,7 @@ const similarCharacters = [
           <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-left">
             <div>
               <dt class="font-ui text-xs font-semibold text-beige-300 dark:text-brown-600 mb-1 uppercase tracking-wide">Unicode</dt>
-              <dd class="font-mono text-lg">{characterData.unicode_string}</dd>
+              <dd class="font-mono text-lg">{characterData.unicode_string.toUpperCase()}</dd>
             </div>
             
             <div>
@@ -165,7 +165,7 @@ const similarCharacters = [
                   <dt class="font-ui text-xs font-semibold text-brown-600 dark:text-beige-400 mb-1 uppercase tracking-wide">Initial Class</dt>
                   <dd class="font-ui text-base text-brown-900 dark:text-beige-100">
                     <a href={`/?initial=${encodeURIComponent(characterData.initial_class!)}`} class="underline hover:no-underline focus-visible:outline-none">
-                      {characterData.initial_class}
+                      {characterData.initial_class}{getInitialClassLabel(characterData.initial_class!) ? ` (${getInitialClassLabel(characterData.initial_class!)})` : ''}
                     </a>
                   </dd>
                 </div>

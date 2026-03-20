@@ -27,7 +27,7 @@ let characterCache: Map<string, CharacterData> | null = null;
 function getUnicodeString(char: string): string {
   const codePoint = char.codePointAt(0);
   if (!codePoint) return "";
-  return "U+" + codePoint.toString(16).toUpperCase().padStart(4, "0");
+  return "u+" + codePoint.toString(16).toLowerCase().padStart(4, "0");
 }
 
 async function parseTsvAndCache(): Promise<Map<string, CharacterData>> {

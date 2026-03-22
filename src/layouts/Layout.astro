@@ -106,6 +106,10 @@ const { title, description = "Explore Tangut (Western Xia) characters from the U
     </style>
     
     <script is:inline>
+      // Capture OAuth callback params before ClientRouter strips them
+      if (window.location.search.includes('state=') && window.location.search.includes('code=')) {
+        sessionStorage.setItem('oauth_callback_params', window.location.search);
+      }
       // Theme management
       function applyTheme() {
         if (typeof Storage !== 'undefined') {

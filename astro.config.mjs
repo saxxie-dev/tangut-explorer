@@ -7,6 +7,7 @@ import solid from '@astrojs/solid-js';
 import { envField } from 'astro/config';
 
 export default defineConfig({
+  server: { host: true },
   integrations: [tailwind(), solid()],
   env: {
     schema: {

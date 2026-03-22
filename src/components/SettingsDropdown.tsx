@@ -1,5 +1,5 @@
 import { createSignal, onMount, onCleanup, Show } from "solid-js";
-import { getAtprotoClient } from "../utils/atproto";
+import { getAtprotoClient, getLocalRedirectUri } from "../utils/atproto";
 
 export function SettingsDropdown() {
   const [isOpen, setIsOpen] = createSignal(false);
@@ -29,14 +29,6 @@ export function SettingsDropdown() {
       setProfile(data);
     } catch (err) {
       console.warn("Failed to fetch ATProto profile:", err);
-      try {
-        const session = await s.sessionGetter(s.sub);
-        if (session?.handle) {
-          setProfile({ handle: session.handle, did: s.sub });
-        }
-      } catch (err2) {
-        console.warn("Failed to get ATProto session:", err2);
-      }
     }
   };
 
@@ -83,7 +75,18 @@ export function SettingsDropdown() {
     try {
       const c = await getAtprotoClient();
       setClient(c);
-      const result = await c.init();
+
+      // Check for OAuth callback params (stored by inline script before ClientRouter strips them)
+      let result;
+      const storedParams = sessionStorage.getItem("oauth_callback_params");
+      if (storedParams) {
+        sessionStorage.removeItem("oauth_callback_params");
+        const params = new URLSearchParams(storedParams);
+        result = await c.initCallback(params);
+      } else {
+        result = await c.init();
+      }
+
       if (result?.session) {
         setSession(result.session);
         fetchProfile(result.session);
@@ -109,7 +112,12 @@ export function SettingsDropdown() {
 
     setSigningIn(true);
     try {
-      await c.signIn(h);
+      const redirectUri = getLocalRedirectUri();
+      if (redirectUri) {
+        await c.signIn(h, { redirect_uri: redirectUri });
+      } else {
+        await c.signIn(h);
+      }
     } catch (err) {
       console.error("ATProto login error:", err);
       alert("Failed to login. Please check your handle.");
